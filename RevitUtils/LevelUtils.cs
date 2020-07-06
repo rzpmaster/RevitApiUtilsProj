@@ -11,7 +11,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="doc"></param>
         /// <returns></returns>
-        public static List<Level> GetAllLevels(this Document doc)
+        public static List<Level> GetAllLevels(Document doc)
         {
             FilteredElementCollector levelFilter = new FilteredElementCollector(doc);
             ICollection<Element> levelCollect = levelFilter.OfClass(typeof(Level)).ToElements();

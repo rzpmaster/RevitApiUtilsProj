@@ -163,7 +163,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <returns></returns>
-        public static XYZ GetRoomCenterPoint(Room room)
+        public static XYZ GetRoomCenterPoint(this Room room)
         {
             BoundingBoxXYZ box = room.get_BoundingBox(null);
             XYZ center = box.Min.Add(box.Max).Multiply(0.5);
@@ -176,7 +176,7 @@ namespace RevitUtils
         /// <param name="room"></param>
         /// <param name="height">房间高度（需要拉伸高度的：从房间标高的Elevation拉升到指定高度）</param>
         /// <returns></returns>
-        public static Outline GetRoomMaxBoundingBox(Room room, double height)
+        public static Outline GetRoomMaxBoundingBox(this Room room, double height)
         {
             //var height = GetRoomHeightByAdjacentElevation(room);
             var level = room.Level.Elevation;
@@ -193,7 +193,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <returns>返回该房间边界的CurveLoop，包括墙、分隔线、柱等</returns>
-        public static IList<CurveLoop> GetRoomBoundaryAsCurveLoopArray(Room room)
+        public static IList<CurveLoop> GetRoomBoundaryAsCurveLoopArray(this Room room)
         {
             var bndOpt = new SpatialElementBoundaryOptions();
             foreach (SpatialElementBoundaryLocation spl in Enum.GetValues(typeof(SpatialElementBoundaryLocation)))
@@ -243,7 +243,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <returns></returns>
-        public static Solid GetRoomSolid(Room room)
+        public static Solid GetRoomSolid(this Room room)
         {
             var bndOpt = new SpatialElementBoundaryOptions();
             SpatialElementGeometryCalculator calculator = new SpatialElementGeometryCalculator(room.Document, bndOpt);
@@ -252,5 +252,194 @@ namespace RevitUtils
 
             return roomSolid;
         }
+
+        /// <summary>
+        /// 获得房间的拉伸实体Solid
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        public static Solid GetRoomActualSolid(this Room room)
+        {
+            //TODO:
+            return null;
+        }
+
+        /// <summary>
+        /// 获得房间边界及边界组成元素
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns>内层List为CurveLoop组成Curve,外层IList是组成CurveLoop的个数</returns>
+        public static IList<List<RoomBoundary>> GetRoomSurroundingElements(this Room room)
+        {
+            IList<IList<BoundarySegment>> segmentsloops = null;
+            IList<CurveLoop> curveLoop = null;
+            var bndOpt = new SpatialElementBoundaryOptions();
+            foreach (SpatialElementBoundaryLocation spl in Enum.GetValues(typeof(SpatialElementBoundaryLocation)))
+            {
+                //获取房间边界的定位点，可以是边界、中心、核心层中心、核心层边界等
+                bndOpt.SpatialElementBoundaryLocation = spl;
+                try
+                {
+                    segmentsloops = room.GetBoundarySegments(bndOpt);
+                    if (segmentsloops != null)
+                    {
+                        curveLoop = segmentsloops.Select(e =>
+                        {
+                            var curves = e.Select(l => l.GetCurve()).ToList();
+                            return CurveLoop.Create(curves);
+                        }).ToList();
+
+                        // 验证CurveLoop是否合法（因为有可能存在自交的情况）
+                        GeometryCreationUtilities.CreateExtrusionGeometry(curveLoop, XYZ.BasisZ, 10);
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            if (segmentsloops == null)
+            {
+                return null;
+            }
+
+            IList<List<RoomBoundary>> rstBoundaryList = new List<List<RoomBoundary>>();
+            for (int i = 0; i < segmentsloops.Count; i++)
+            {
+                bool isCounterclockwise = curveLoop[i].IsCounterclockwise(XYZ.BasisZ);
+                var elements = GetElementsByBoundarySegments(room.Document, segmentsloops[i], isCounterclockwise);
+                rstBoundaryList.Add(elements);
+            }
+
+            return rstBoundaryList;
+        }
+
+        private static List<RoomBoundary> GetElementsByBoundarySegments(Document document, IList<BoundarySegment> loop, bool isCounterclockwise)
+        {
+            List<RoomBoundary> elements = new List<RoomBoundary>();
+            foreach (BoundarySegment segment in loop)
+            {
+                if (segment != null)
+                {
+                    Element element = document.GetElement(segment.ElementId);
+                    if (element == null)
+                    {
+                        element = document.GetElement(segment.LinkElementId);
+                    }
+
+                    Curve segmentCure = segment.GetCurve();
+                    if (element == null)
+                    {//使用射线法找到该 segment 对应的元素
+                        element = GetSegmentElementByRay(segmentCure, document, isCounterclockwise);
+                    }
+                    elements.Add(new RoomBoundary() { BoundaryCurve = segmentCure, BoundaryElement = element, IsOuterBoundary = isCounterclockwise });
+                }
+            }
+
+            return elements;
+        }
+
+        private static Element GetSegmentElementByRay(Curve segmentCure, Document document, bool isCounterclockwise)
+        {
+            Element boundaryElement = null;
+
+            double stepInRoom = 0.1;
+            XYZ direction = (segmentCure.GetEndPoint(1) - segmentCure.GetEndPoint(0)).Normalize();
+            var leftDirection = new XYZ(-direction.Y, direction.X, direction.Z);
+            XYZ upDir = 1 * XYZ.BasisZ;
+
+            XYZ toRoomVec = isCounterclockwise ? stepInRoom * leftDirection : stepInRoom * leftDirection.Negate();
+            XYZ pointBottomInRoom = segmentCure.Evaluate(0.5, true) + toRoomVec;
+            XYZ startPoint = pointBottomInRoom + upDir;
+
+            //默认过滤 墙和柱子
+            List<ElementFilter> filters = new List<ElementFilter>{
+                new ElementCategoryFilter(BuiltInCategory.OST_Walls),
+                new ElementCategoryFilter(BuiltInCategory.OST_Columns),
+                new ElementCategoryFilter(BuiltInCategory.OST_Doors),
+                new ElementCategoryFilter(BuiltInCategory.OST_CurtainWallPanels),   //幕墙嵌板
+            };
+            LogicalOrFilter orFilter = new LogicalOrFilter(filters);
+
+            FilteredElementCollector collector = new FilteredElementCollector(document);
+            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().First<View3D>(v3 => !(v3.IsTemplate));
+            ReferenceIntersector intersector = new ReferenceIntersector(orFilter, FindReferenceTarget.Element, view3D);
+            intersector.FindReferencesInRevitLinks = document.IsLinked;
+
+            XYZ toWallDir = isCounterclockwise ? leftDirection.Negate() : leftDirection;
+            ReferenceWithContext context = intersector.FindNearest(startPoint, toWallDir);
+
+            if (context != null)
+            {
+                if ((context.Proximity > 10e-6) &&
+                    (context.Proximity < 0.01 + stepInRoom))
+                {
+                    var reference = context.GetReference();
+                    if (reference != null)
+                    {
+                        boundaryElement = document.GetElement(reference);
+                    }
+                }
+            }
+
+            return boundaryElement;
+        }
+
+        /// <summary>
+        /// 获取房间最外圈的CurveLoop
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        public static CurveLoop GetRoomMaxCurveLoop(this Room room)
+        {
+            var loops = GetRoomBoundaryAsCurveLoopArray(room);
+            if (loops != null && loops.Count > 0)
+            {
+                return loops.OrderBy(x =>
+                ExporterIFCUtils.ComputeAreaOfCurveLoops(new List<CurveLoop> { x })).LastOrDefault();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 获取房间最外圈的元素
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        public static List<Element> GetRoomMaxSurroundingElements(this Room room)
+        {
+            var allElements = GetRoomSurroundingElements(room);
+            return allElements.FirstOrDefault(rb => rb.FirstOrDefault()?.IsOuterBoundary ?? false)?.Select(e => e.BoundaryElement).ToList();
+        }
+
+        /// <summary>
+        /// 判断给定房间是否有吊顶
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        public static bool HasCeiling(this Room room)
+        {
+            //TODO:
+            return default;
+        }
+
+        /// <summary>
+        /// 计算房间吊顶到房间地面的高度，单位foot
+        /// </summary>
+        /// <param name="room"></param>
+        /// <returns></returns>
+        public static double GetRoomCeilingHeight(this Room room)
+        {
+            //TODO:
+            return default;
+        }
+    }
+
+    public sealed class RoomBoundary
+    {
+        public Curve BoundaryCurve { get; set; }
+        public Element BoundaryElement { get; set; }
+        public bool IsOuterBoundary { get; set; }
     }
 }

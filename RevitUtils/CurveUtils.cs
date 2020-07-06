@@ -40,6 +40,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="curve1"></param>
         /// <param name="curve2"></param>
+        /// <param name="tolerance">向量点乘的tolerance</param>
         /// <returns></returns>
         public static bool IsVerticalTo(this Curve curve1, Curve curve2, double tolerance)
         {
@@ -53,7 +54,7 @@ namespace RevitUtils
         }
 
         /// <summary>
-        /// 判断两条曲线是否近似垂直
+        /// 判断两条曲线是否近似垂直，默认tolerance为0.01
         /// </summary>
         /// <param name="curve1"></param>
         /// <param name="curve2"></param>
@@ -91,7 +92,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="curve1"></param>
         /// <param name="curve2"></param>
-        /// <param name="tolerance"></param>
+        /// <param name="tolerance">向量叉乘长度等于0的tolerance</param>
         /// <returns></returns>
         public static bool IsParallelTo(this Curve curve1, Curve curve2, double tolerance)
         {
@@ -163,7 +164,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="curve"></param>
         /// <param name="point">不在给定Curve上的任意点</param>
-        /// <param name="normalizedParameter"></param>
+        /// <param name="normalizedParameter">给定参数点，默认为中点</param>
         /// <returns></returns>
         public static XYZ GetNormalInXoy(this Curve curve, XYZ point, double normalizedParameter = 0.5)
         {
@@ -242,6 +243,117 @@ namespace RevitUtils
             }
 
             return nc;
+        }
+
+        /// <summary>
+        /// 计算两条曲线的最近点
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="other"></param>
+        /// <param name="withinThisCurveBounds">第一条线是否有界，默认为true</param>
+        /// <param name="withinOtherCurveBounds">第一条线是否有界，默认为true</param>
+        /// <returns></returns>
+        public static XYZ[] ComputeClosestPoints(this Curve curve, Curve other, bool withinThisCurveBounds=true, bool withinOtherCurveBounds=true)
+        {
+            curve.ComputeClosestPoints(other, withinThisCurveBounds, withinOtherCurveBounds, false, out IList<ClosestPointsPairBetweenTwoCurves> ps);
+            return new XYZ[2] { ps.FirstOrDefault()?.XYZPointOnFirstCurve, ps.FirstOrDefault()?.XYZPointOnSecondCurve };
+        }
+
+        /// <summary>
+        /// 计算两条曲线的最近端点
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="other"></param>
+        /// <returns>[0]是curve上的点，[1]是other上的点</returns>
+        public static XYZ[] ComputeClosestEndPoints(this Curve curve, Curve other)
+        {
+            var p1 = curve.GetEndPoint(0);
+            var p2 = curve.GetEndPoint(1);
+            XYZ[] c1 = new XYZ[2] { p1, p2 };
+
+            var p3 = other.GetEndPoint(0);
+            var p4 = other.GetEndPoint(1);
+            XYZ[] c2 = new XYZ[2] { p3, p4 };
+
+            XYZ pt1 = null, pt2 = null;
+            double minDis = double.MaxValue;
+            foreach (var i in c1)
+            {
+                foreach (var j in c2)
+                {
+                    var distance = i.DistanceTo(j);
+                    if (distance < minDis)
+                    {
+                        minDis = distance;
+                        pt1 = i;
+                        pt2 = j;
+                    }
+                }
+            }
+
+            return new XYZ[2] { pt1, pt2 };
+        }
+
+        /// <summary>
+        /// 计算两条曲线的最远端点
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="other"></param>
+        /// <returns>是curve上的点，[1]是other上的点</returns>
+        public static XYZ[] ComputeFurthestEndPoints(this Curve curve, Curve other)
+        {
+            var p1 = curve.GetEndPoint(0);
+            var p2 = curve.GetEndPoint(1);
+            XYZ[] c1 = new XYZ[2] { p1, p2 };
+
+            var p3 = other.GetEndPoint(0);
+            var p4 = other.GetEndPoint(1);
+            XYZ[] c2 = new XYZ[2] { p3, p4 };
+
+            XYZ pt1 = null, pt2 = null;
+            double maxDis = 0;
+            foreach (var i in c1)
+            {
+                foreach (var j in c2)
+                {
+                    var distance = i.DistanceTo(j);
+                    if (distance > maxDis)
+                    {
+                        maxDis = distance;
+                        pt1 = i;
+                        pt2 = j;
+                    }
+                }
+            }
+
+            return new XYZ[2] { pt1, pt2 };
+        }
+
+        /// <summary>
+        /// 计算曲线端点中离给定点较近的端点
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public static XYZ ComputeClosestEndPoints(this Curve curve, XYZ targetPoint)
+        {
+            var p1 = curve.GetEndPoint(0);
+            var p2 = curve.GetEndPoint(1);
+            XYZ[] c1 = new XYZ[2] { p1, p2 };
+
+            XYZ pt1 = null;
+            double minDis = double.MaxValue;
+            foreach (var i in c1)
+            {
+                var distance = i.DistanceTo(targetPoint);
+                if (distance < minDis)
+                {
+                    minDis = distance;
+                    pt1 = i;
+                }
+            }
+
+            return pt1;
         }
 
         #endregion

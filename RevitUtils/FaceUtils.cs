@@ -14,7 +14,7 @@ namespace RevitUtils
     /// RuledFace           扫掠得到的面
     /// HermiteFace         通过Hermite插值定义的面
     /// </summary>
-    public class FaceUtils
+    public static class FaceUtils
     {
         public static FaceArray GetElementSolidFaces(Element elem)
         {
@@ -26,7 +26,7 @@ namespace RevitUtils
             return solid.Faces;
         }
 
-        public static XYZ FaceNormal(Face f)
+        public static XYZ FaceNormal(this Face f)
         {
             var bbox = f.GetBoundingBox();
 

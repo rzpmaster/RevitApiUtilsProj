@@ -41,17 +41,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BoundingBoxUtils.cs" />
     <Compile Include="CurveUtils.cs" />
     <Compile Include="FaceUtils.cs" />
     <Compile Include="GeometryUtils.cs" />
     <Compile Include="LevelUtils.cs" />
     <Compile Include="LinkedElementUtils.cs" />
     <Compile Include="MathHelper.cs" />
+    <Compile Include="MepCurveUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RevitExtensions.cs" />
     <Compile Include="RoomUtils.cs" />
     <Compile Include="RvtSelectionFilters.cs" />
     <Compile Include="VectorUtiles.cs" />
+    <Compile Include="ViewUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CBIM.Revit.2020.Dlls">

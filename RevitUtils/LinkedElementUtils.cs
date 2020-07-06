@@ -11,7 +11,7 @@ namespace RevitUtils
         /// <param name="currDoc"></param>
         /// <param name="linkedRef"></param>
         /// <returns></returns>
-        public static Document GetLinkedDocumnet(this Document currDoc, Reference linkedRef)
+        public static Document GetLinkedDocumnet(Document currDoc, Reference linkedRef)
         {
             string stableReflink = linkedRef.ConvertToStableRepresentation(currDoc).Split(':')[0];
             Reference refLink = Reference.ParseFromStableRepresentation(currDoc, stableReflink);
@@ -26,7 +26,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="currDoc"></param>
         /// <returns></returns>
-        public static List<Document> GetAllLinkedDocument(this Document currDoc)
+        public static List<Document> GetAllLinkedDocument(Document currDoc)
         {
             FilteredElementCollector collector = new FilteredElementCollector(currDoc);
             var linkInstances = collector.OfClass(typeof(RevitLinkInstance));

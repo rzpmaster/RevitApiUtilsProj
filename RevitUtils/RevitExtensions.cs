@@ -33,7 +33,7 @@ namespace RevitUtils
         /// <param name="loop"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static FilledRegion CreateRangeBoxByFilledRegion(this Document doc, List<CurveLoop> loop, String name = "")
+        public static FilledRegion CreateRangeBoxByFilledRegion(Document doc, List<CurveLoop> loop, String name = "")
         {
             UIDocument uIDocument = new UIDocument(doc);
             var typeId = GetDefultFilledRegionTypeId(doc);
@@ -51,7 +51,7 @@ namespace RevitUtils
         /// <param name="loop"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static FilledRegion CreateRangeBoxByFilledRegion(this Document doc, ElementId typeId, ElementId viewId, List<CurveLoop> loop, String name = "")
+        public static FilledRegion CreateRangeBoxByFilledRegion(Document doc, ElementId typeId, ElementId viewId, List<CurveLoop> loop, String name = "")
         {
             FilledRegion region = null;
 
@@ -95,7 +95,7 @@ namespace RevitUtils
         /// <param name="transientSolid"></param>
         /// <param name="dsName"></param>
         /// <returns></returns>
-        public static DirectShape CreateDirectShape(this Document doc, Solid transientSolid, String dsName = "")
+        public static DirectShape CreateDirectShape(Document doc, Solid transientSolid, String dsName = "")
         {
             ElementId catId = new ElementId(BuiltInCategory.OST_GenericModel);  //常规模型
             DirectShape ds = DirectShape.CreateElement(doc, catId);

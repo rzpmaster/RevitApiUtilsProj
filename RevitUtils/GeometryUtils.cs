@@ -110,5 +110,28 @@ namespace RevitUtils
 
             yield break;
         }
+
+        /// <summary>
+        /// 判断一个点是否在多边形内部（xoy平面内）
+        /// http://alienryderflex.com/polygon/
+        /// https://github.com/wieslawsoltes/Math.Spatial/blob/master/src/Math.Spatial/Polygon2.cs
+        /// </summary>
+        /// <param name="polygon">多边形顶点集合</param>
+        /// <param name="point">要判断的点</param>
+        /// <returns></returns>
+        /// <remarks>不安全，没有判断边界条件</remarks>
+        public static bool IsPointInPolygon(List<XYZ> polygon, XYZ point)
+        {
+            bool contains = false;
+            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+            {
+                if (((polygon[i].Y > point.Y) != (polygon[j].Y > point.Y))
+                    && (point.X < (((polygon[j].X - polygon[i].X) * (point.Y - polygon[i].Y)) / (polygon[j].Y - polygon[i].Y)) + polygon[i].X))
+                {
+                    contains = !contains;
+                }
+            }
+            return contains;
+        }
     }
 }

@@ -8,8 +8,8 @@ namespace RevitUtils
         /// <summary>
         /// 判断向量是否垂直
         /// </summary>
-        /// <param name="xyz1"></param>
-        /// <param name="xyz2"></param>
+        /// <param name="vector1"></param>
+        /// <param name="vector2"></param>
         /// <returns></returns>
         public static bool IsVerticalTo(this XYZ vector1, XYZ vector2)
         {
@@ -23,6 +23,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="vector1"></param>
         /// <param name="vector2"></param>
+        /// <param name="tolerance">点乘等于0的tolerance</param>
         /// <returns></returns>
         public static bool IsVerticalTo(this XYZ vector1, XYZ vector2, double tolerance)
         {
@@ -35,6 +36,7 @@ namespace RevitUtils
         /// <param name="vector1"></param>
         /// <param name="vector2"></param>
         /// <returns></returns>
+        /// <remarks>点乘约等于0，默认tolerance为0.01</remarks>
         public static bool IsAlmostVerticalTo(this XYZ vector1, XYZ vector2)
         {
             return vector1.DotProduct(vector2).IsAlmostZero();
@@ -61,6 +63,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="vector1"></param>
         /// <param name="vector2"></param>
+        /// <param name="tolerance">叉乘长度为0的tolerance</param>
         /// <returns></returns>
         public static bool IsParallelTo(this XYZ vector1, XYZ vector2, double tolerance)
         {
@@ -73,7 +76,7 @@ namespace RevitUtils
         /// <param name="vector1"></param>
         /// <param name="vector2"></param>
         /// <returns></returns>
-        /// <remarks>叉乘长度约等于0</remarks>
+        /// <remarks>叉乘长度约等于0，默认tolerance为0.01</remarks>
         public static bool IsAlmostParallelTo(this XYZ vector1, XYZ vector2)
         {
             return vector1.CrossProduct(vector2).GetLength().IsAlmostZero();
@@ -84,7 +87,7 @@ namespace RevitUtils
         /// </summary>
         /// <param name="vector1"></param>
         /// <param name="vector2"></param>
-        /// <param name="tolerance">两向量的角度容忍值，默认为1°（角度制）</param>
+        /// <param name="tolerance">两向量的角度tolerance，默认为1°（角度制）</param>
         /// <returns></returns>
         /// <remarks>向量角度在±tolerance之间</remarks>
         public static bool IsAlmostParallelToByAngle(this XYZ vector1, XYZ vector2, double tolerance = 1)
