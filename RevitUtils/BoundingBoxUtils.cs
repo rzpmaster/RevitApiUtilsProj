@@ -115,5 +115,29 @@ namespace RevitUtils
             bb.ExpandToContain(other.Min);
             bb.ExpandToContain(other.Max);
         }
+
+        /// <summary>
+        /// 获得Bbox的中心点
+        /// </summary>
+        /// <param name="bBox"></param>
+        /// <returns></returns>
+        public static XYZ Center(this BoundingBoxXYZ bBox)
+        {
+            XYZ center = (bBox.Max + bBox.Min) * 0.5;
+            return center;
+        }
+
+        /// <summary>
+		/// 缩放Bbox
+		/// </summary>
+		/// <param name="bb"></param>
+		/// <param name="factor">缩放比例，0.1</param>
+		/// <param name="isZ">是否缩放z轴</param>
+		public static void Scale(this BoundingBoxXYZ bb, double factor, bool isZ = false)
+        {
+            XYZ l = (bb.Max - bb.Min);
+            bb.Min = new XYZ(bb.Min.X - l.X * factor, bb.Min.Y - l.Y * factor, bb.Min.Z - (isZ ? l.Z * factor : 0));
+            bb.Max = new XYZ(bb.Max.X + l.X * factor, bb.Max.Y + l.Y * factor, bb.Max.Z + (isZ ? l.Z * factor : 0));
+        }
     }
 }

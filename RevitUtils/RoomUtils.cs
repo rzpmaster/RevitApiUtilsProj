@@ -73,7 +73,7 @@ namespace RevitUtils
         /// 射线法获取房间高度，单位foot 
         /// </summary>
         /// <param name="room"></param>
-        /// <param name="pointInRoom">房间内一点，请确保该点在房间上下两个楼板的标高内，否则计算值错误</param>
+        /// <param name="pointInRoom">房间内一点，请确保该点在房间上下两个楼板范围内，否则计算值错误</param>
         /// <returns></returns>
         public static double GetRoomHeightByRay(this Room room, XYZ pointInRoom)
         {
@@ -219,8 +219,14 @@ namespace RevitUtils
         /// <returns></returns>
         public static Solid GetRoomActualSolid(this Room room)
         {
-            //TODO:
-            return null;
+            var loops = GetRoomBoundaryAsCurveLoopArray(room);
+            if (loops == null)
+            {
+                return null;
+            }
+
+            TryGetRoomHeight(room, out double roomHeight);
+            return GeometryCreationUtilities.CreateExtrusionGeometry(loops, XYZ.BasisZ, roomHeight);
         }
 
         /// <summary>
@@ -398,8 +404,28 @@ namespace RevitUtils
             var height = levels.FirstOrDefault(e => e > room.Level.Elevation) - room.Level.Elevation;
 
             // 再次使用射线法查找准确的高度,防止找到的天花板在相邻的房间内而导致的错误
-            // TODO:
-            return default;
+            var point = GetRoomCenterPoint(room);
+            point += new XYZ(0, 0, height / 2);
+            var ceilingHeight = GetRoomCeilingHeightByRay(room, point);
+
+            if (!double.IsNaN(ceilingHeight)) return ceilingHeight;
+            return null;
+        }
+
+        /// <summary>
+        /// 射线法获取房间吊顶高度，单位foot 
+        /// </summary>
+        /// <param name="room"></param>
+        /// <param name="pointInRoom">房间内一点，请确保该点在房间下楼板和上天花板内，否则计算值错误</param>
+        /// <returns></returns>
+        public static double GetRoomCeilingHeightByRay(Room room, XYZ pointInRoom)
+        {
+            var topReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ, BuiltInCategory.OST_Ceilings);
+            if (topReference == null) return double.NaN;
+            var bottomReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ.Negate(), BuiltInCategory.OST_Floors);
+            if (bottomReference == null) return double.NaN;
+
+            return topReference.Proximity + bottomReference.Proximity;
         }
 
         /// <summary>

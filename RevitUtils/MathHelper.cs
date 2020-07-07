@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.Revit.DB;
+using System;
 
 namespace RevitUtils
 {
@@ -16,8 +17,77 @@ namespace RevitUtils
         /// 英尺到毫米的转换系数
         /// </summary>
         public const double Feet2Mm = convertFeetToMm;
-        #endregion
 
+        /// <summary>
+        /// 米到英尺的转换系数
+        /// </summary>
+        public const double M2Feet = 1000 * Mm2Feet;
+
+        /// <summary>
+        /// 英尺到米的转换系数
+        /// </summary>
+        public const double Feet2M = Feet2Mm / 1000;
+
+        /// <summary>
+        /// Feet转MM
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double FeetToMM(this double value)
+        {
+            return UnitUtils.ConvertFromInternalUnits(value, DisplayUnitType.DUT_MILLIMETERS);
+        }
+
+        /// <summary>
+        /// Feet转M
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double FeetToM(this double value)
+        {
+            return UnitUtils.ConvertFromInternalUnits(value, DisplayUnitType.DUT_METERS);
+        }
+
+        /// <summary>
+        /// MM转Feet
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double MMToFeet(this double value)
+        {
+            return UnitUtils.ConvertToInternalUnits(value, DisplayUnitType.DUT_MILLIMETERS);
+        }
+
+        /// <summary>
+        /// M转Feet
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double MToFeet(this double value)
+        {
+            return UnitUtils.ConvertToInternalUnits(value, DisplayUnitType.DUT_METERS);
+        }
+
+        /// <summary>
+        /// 角度转弧度
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double ToRad(this double value)
+        {
+            return UnitUtils.ConvertToInternalUnits(value, DisplayUnitType.DUT_DECIMAL_DEGREES);
+        }
+
+        /// <summary>
+        /// 弧度转角度
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static double ToDegree(this double value)
+        {
+            return UnitUtils.ConvertFromInternalUnits(value, DisplayUnitType.DUT_DECIMAL_DEGREES);
+        }
+        #endregion
 
         #region Compare Related
         const double tolerance = 1.0E-9;
@@ -59,6 +129,44 @@ namespace RevitUtils
         public static bool IsAlmostEqual(this double a, double b)
         {
             return IsEqual(a, b, almostTolerance);
+        }
+
+        public static bool IsMoreThan(this double d1, double d2)
+        {
+            //要绝对大于
+            if (d1 > d2 && !d1.IsEqual(d2))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsMoreThanOrEqual(this double d1, double d2)
+        {
+            if (d1 > d2 || d1.IsEqual(d2))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsLessThan(this double d1, double d2)
+        {
+            //要绝对大于
+            if (d1 < d2 && !d1.IsEqual(d2))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsLessThanOrEqual(this double d1, double d2)
+        {
+            if (d1 < d2 || d1.IsEqual(d2))
+            {
+                return true;
+            }
+            return false;
         }
         #endregion
     }

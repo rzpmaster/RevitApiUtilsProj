@@ -149,5 +149,52 @@ namespace RevitUtils
 
             return vector.CrossProduct(XYZ.BasisZ).Normalize();
         }
+
+        #region VectorMatrix
+        /// <summary>
+		/// multiplication cross of two Autodesk.Revit.DB.XYZ as Matrix
+		/// </summary>
+		/// <param name="p1"></param>
+		/// <param name="p2"></param>
+		/// <returns></returns>
+		public static XYZ CrossMatrix(XYZ p1, XYZ p2)
+        {
+            double v1 = p1.X;
+            double v2 = p1.Y;
+            double v3 = p1.Z;
+
+            double u1 = p2.X;
+            double u2 = p2.Y;
+            double u3 = p2.Z;
+
+            double x = v3 * u2 - v2 * u3;
+            double y = -v3 * u1 + v1 * u3;
+            double z = v2 * u1 - v1 * u2;
+
+            XYZ point = new XYZ(x, y, z);
+            return point;
+        }
+
+        /// <summary>
+        /// dot product of two Autodesk.Revit.DB.XYZ as Matrix
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
+        public static double DotMatrix(XYZ p1, XYZ p2)
+        {
+            double v1 = p1.X;
+            double v2 = p1.Y;
+            double v3 = p1.Z;
+
+            double u1 = p2.X;
+            double u2 = p2.Y;
+            double u3 = p2.Z;
+
+            double result = v1 * u1 + v2 * u2 + v3 * u3;
+
+            return result;
+        }
+        #endregion
     }
 }

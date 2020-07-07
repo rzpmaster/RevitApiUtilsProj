@@ -701,9 +701,8 @@ namespace RevitUtils
         public static XYZ ProjectXoy(this XYZ xyz)
         {
             if (xyz == null)
-            {
                 return null;
-            }
+
             return new XYZ(xyz.X, xyz.Y, 0);
         }
 
@@ -718,6 +717,20 @@ namespace RevitUtils
                 return null;
 
             return new UV(xyz.X, xyz.Y);
+        }
+
+        /// <summary>
+        /// ToXYZ
+        /// </summary>
+        /// <param name="uV"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
+        public static XYZ ToXYZ(this UV uV, double z = 0)
+        {
+            if (uV == null)
+                return null;
+
+            return new XYZ(uV.U, uV.V, z);
         }
 
         #endregion
