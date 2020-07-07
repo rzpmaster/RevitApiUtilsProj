@@ -20,7 +20,7 @@ namespace RevitUtils.TestFile
                 // TODO: 测试代码这里实现
 
             }
-            catch (Exception ex)
+            catch
             {
                 return Result.Cancelled;
             }
@@ -42,7 +42,7 @@ namespace RevitUtils.TestFile
                 ViewUtils.HighLightElements(uidoc, new List<ElementId>() { new ElementId(2170659) });
 
             }
-            catch (Exception ex)
+            catch
             {
                 return Result.Cancelled;
             }
