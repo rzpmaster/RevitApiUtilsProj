@@ -7,6 +7,12 @@ using System.Linq;
 
 namespace RevitUtils
 {
+    /// <summary>
+    /// SpatialElement's subclass has
+    /// Architecture.Room
+    /// Area
+    /// Mechanical.Space
+    /// </summary>
     public static class RoomUtils
     {
         /// <summary>
