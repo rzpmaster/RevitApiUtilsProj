@@ -16,16 +16,11 @@ namespace RevitUtils
     /// </summary>
     public static class FaceUtils
     {
-        public static FaceArray GetElementSolidFaces(Element elem)
-        {
-            var solid = GeometryUtils.GetSolid(elem);
-            if (null == solid)
-            {
-                return new FaceArray();
-            }
-            return solid.Faces;
-        }
-
+        /// <summary>
+        /// 获取面的法向量
+        /// </summary>
+        /// <param name="f"></param>
+        /// <returns></returns>
         public static XYZ FaceNormal(this Face f)
         {
             var bbox = f.GetBoundingBox();
@@ -33,54 +28,24 @@ namespace RevitUtils
             return f.ComputeNormal(bbox.Min);
         }
 
-        public static Face GetElementBottomFace(Element elem)
-        {
-            return GetElementFaceByDirection(elem, XYZ.BasisZ.Negate());
-        }
-
-        public static Face GetElementTopFace(Element elem)
-        {
-            return GetElementFaceByDirection(elem, XYZ.BasisZ);
-        }
-
+        /// <summary>
+        /// 获取Solid的底面
+        /// </summary>
+        /// <param name="solid"></param>
+        /// <returns></returns>
         public static Face GetBottomFace(Solid solid)
         {
             return GetSoildFaceByDirection(solid, XYZ.BasisZ.Negate());
         }
 
+        /// <summary>
+        /// 获取Solid的顶面
+        /// </summary>
+        /// <param name="solid"></param>
+        /// <returns></returns>
         public static Face GetTopFace(Solid solid)
         {
             return GetSoildFaceByDirection(solid, XYZ.BasisZ);
-        }
-
-        /// <summary>
-        /// 返回以给定方向为法线方向的面
-        /// </summary>
-        /// <param name="elem"></param>
-        /// <param name="direction"></param>
-        /// <returns></returns>
-        public static Face GetElementFaceByDirection(Element elem, XYZ direction)
-        {
-            Face face = null;
-            Face almostFace = null;
-
-            var faceArray = GetElementSolidFaces(elem);
-            foreach (Face f in faceArray)
-            {
-                var nor = FaceNormal(f);
-                if (nor.IsAlmostEqualTo(direction))
-                {
-                    face = f;
-                }
-                if (nor.AngleTo(direction) < (Math.PI / 2))
-                {
-                    almostFace = f;
-                }
-            }
-
-            var relt = face != null ? face : almostFace;
-
-            return relt == null ? null : relt;
         }
 
         /// <summary>
@@ -111,6 +76,28 @@ namespace RevitUtils
             var relt = face != null ? face : almostFace;
 
             return relt == null ? null : relt;
+        }
+
+        /// <summary>
+        /// 返回以给定方向为法线方向的面
+        /// </summary>
+        /// <param name="elem"></param>
+        /// <param name="direction"></param>
+        /// <returns></returns>
+        public static Face GetElementFaceByDirection(Element elem, XYZ direction)
+        {
+            var solid = GeometryUtils.GetSolid(elem);
+            return GetSoildFaceByDirection(solid, direction);
+        }
+
+        public static Face GetElementBottomFace(Element elem)
+        {
+            return GetElementFaceByDirection(elem, XYZ.BasisZ.Negate());
+        }
+
+        public static Face GetElementTopFace(Element elem)
+        {
+            return GetElementFaceByDirection(elem, XYZ.BasisZ);
         }
     }
 }

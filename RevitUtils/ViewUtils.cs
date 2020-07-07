@@ -51,21 +51,13 @@ namespace RevitUtils
                 return;
             }
 
-            //测试高亮显示是否需要开启事务
-            //using (Transaction tr = new Transaction(uidoc.Document, "高亮显示"))
-            //{
-            //    tr.Start();
-
-                ICollection<ElementId> elementIds = uidoc.Selection.GetElementIds();
-                elementIds.Clear();
-                for (int i = 0; i < elementsToHighLight.Count(); i++)
-                {
-                    elementIds.Add(elementsToHighLight[i]);
-                }
-                uidoc.Selection.SetElementIds(elementIds);
-
-                //tr.Commit();
-            //}
+            ICollection<ElementId> elementIds = uidoc.Selection.GetElementIds();
+            elementIds.Clear();
+            for (int i = 0; i < elementsToHighLight.Count(); i++)
+            {
+                elementIds.Add(elementsToHighLight[i]);
+            }
+            uidoc.Selection.SetElementIds(elementIds);
         }
 
         /// <summary>
