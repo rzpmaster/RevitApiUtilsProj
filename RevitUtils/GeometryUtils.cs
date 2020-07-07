@@ -1,8 +1,23 @@
 ﻿using Autodesk.Revit.DB;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RevitUtils
 {
+    /// <summary>
+    /// GeometryObject's subclass has
+    /// 
+    /// GeometryElement     !!!可迭代
+    /// GeometryInstance    !!!包括 实例几何 和 类型几何
+    /// Solid
+    /// Face
+    /// Curve Edges
+    /// Point
+    /// Mesh
+    /// 
+    /// PolyLine 多段线 
+    /// Profile 轮廓线 （可以填充）
+    /// </summary>
     public static class GeometryUtils
     {
         /// <summary>
@@ -112,6 +127,62 @@ namespace RevitUtils
         }
 
         /// <summary>
+        /// 三角化Solid
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <param name="transientSolid"></param>
+        /// <returns></returns>
+        public static IList<GeometryObject> TessellateSolid(this Solid transientSolid, Document doc)
+        {
+            TessellatedShapeBuilder builder = new TessellatedShapeBuilder();
+
+            ElementId idMaterial = new FilteredElementCollector(doc)
+                                        .OfClass(typeof(Material))
+                                        .FirstElementId();
+
+            ElementId idGraphicsStyle = new FilteredElementCollector(doc)
+                                            .OfClass(typeof(GraphicsStyle))
+                                            .FirstElementId();
+
+            builder.OpenConnectedFaceSet(true);
+
+            FaceArray faceArray = transientSolid.Faces;
+
+            foreach (Face face in faceArray)
+            {
+                List<XYZ> triFace = new List<XYZ>(3);
+                Mesh mesh = face.Triangulate();
+
+                if (null == mesh)
+                    continue;
+
+                int triCount = mesh.NumTriangles;
+
+                for (int i = 0; i < triCount; i++)
+                {
+                    triFace.Clear();
+
+                    for (int n = 0; n < 3; n++)
+                    {
+                        triFace.Add(mesh.get_Triangle(i).get_Vertex(n));
+                    }
+
+                    builder.AddFace(new TessellatedFace(triFace, idMaterial));
+                }
+            }
+
+            builder.CloseConnectedFaceSet();
+
+            // return builder.Build(TessellatedShapeBuilderTarget.Solid, TessellatedShapeBuilderFallback.Abort, idGraphicsStyle);
+            return builder.GetBuildResult().GetGeometricalObjects();
+        }
+
+        /// SolidUtils 中查看更多Solid工具
+
+        /// GeometryCreationUtilities 中查看更过构造Solid的方法：
+        /// 拉伸Extrusion 融合Blend 旋转Revolved 放样Swept 放样融合SweptBlend
+
+        /// <summary>
         /// 判断一个点是否在多边形内部（xoy平面内）
         /// http://alienryderflex.com/polygon/
         /// https://github.com/wieslawsoltes/Math.Spatial/blob/master/src/Math.Spatial/Polygon2.cs
@@ -120,7 +191,7 @@ namespace RevitUtils
         /// <param name="point">要判断的点</param>
         /// <returns></returns>
         /// <remarks>不安全，没有判断边界条件</remarks>
-        public static bool IsPointInPolygon(List<XYZ> polygon, XYZ point)
+        public static bool IsPointInPolygon(IList<XYZ> polygon, XYZ point)
         {
             bool contains = false;
             for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
@@ -132,6 +203,12 @@ namespace RevitUtils
                 }
             }
             return contains;
+        }
+
+        public static bool IsPointInPolygon(this CurveLoop loop, XYZ point)
+        {
+            var polygon = loop.ToPointsList();
+            return IsPointInPolygon(polygon, point);
         }
     }
 }

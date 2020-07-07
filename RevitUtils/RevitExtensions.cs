@@ -106,59 +106,14 @@ namespace RevitUtils
             }
             else
             {
-                TessellatedShapeBuilderResult result = GetTessellatedSolid(doc, transientSolid);
-                ds.SetShape(result.GetGeometricalObjects());
+                var geoms = transientSolid.TessellateSolid(doc);
+                ds.SetShape(geoms);
             }
 
             if (!String.IsNullOrEmpty(dsName))
                 ds.Name = dsName;
 
             return ds;
-        }
-
-        private static TessellatedShapeBuilderResult GetTessellatedSolid(Document doc, Solid transientSolid)
-        {
-            TessellatedShapeBuilder builder = new TessellatedShapeBuilder();
-
-            ElementId idMaterial = new FilteredElementCollector(doc)
-                                        .OfClass(typeof(Material))
-                                        .FirstElementId();
-
-            ElementId idGraphicsStyle = new FilteredElementCollector(doc).
-                                            OfClass(typeof(GraphicsStyle)).
-                                            ToElementIds().First();
-
-            builder.OpenConnectedFaceSet(true);
-
-            FaceArray faceArray = transientSolid.Faces;
-
-            foreach (Face face in faceArray)
-            {
-                List<XYZ> triFace = new List<XYZ>(3);
-                Mesh mesh = face.Triangulate();
-
-                if (null == mesh)
-                    continue;
-
-                int triCount = mesh.NumTriangles;
-
-                for (int i = 0; i < triCount; i++)
-                {
-                    triFace.Clear();
-
-                    for (int n = 0; n < 3; n++)
-                    {
-                        triFace.Add(mesh.get_Triangle(i).get_Vertex(n));
-                    }
-
-                    builder.AddFace(new TessellatedFace(triFace, idMaterial));
-                }
-            }
-
-            builder.CloseConnectedFaceSet();
-
-            // return builder.Build(TessellatedShapeBuilderTarget.Solid, TessellatedShapeBuilderFallback.Abort, idGraphicsStyle);
-            return builder.GetBuildResult();
         }
         #endregion
     }

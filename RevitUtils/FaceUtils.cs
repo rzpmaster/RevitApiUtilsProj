@@ -3,6 +3,8 @@ using System;
 
 namespace RevitUtils
 {
+    // HostObjectUtils 类中可以获得宿主元素的顶面 底面 和侧面。
+
     /// <summary>
     /// Face Class is Inherited from GeometryObject
     /// and its subclass has
@@ -10,7 +12,6 @@ namespace RevitUtils
     /// ConicalFace         圆锥面
     /// CylindricalFace     圆柱面
     /// RevolvedFace        通过绕一个轴旋转得到的面
-    /// 
     /// RuledFace           扫掠得到的面
     /// HermiteFace         通过Hermite插值定义的面
     /// </summary>

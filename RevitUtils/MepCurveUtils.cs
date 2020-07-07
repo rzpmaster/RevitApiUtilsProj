@@ -1,4 +1,7 @@
 ﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Mechanical;
+using Autodesk.Revit.DB.Plumbing;
+using Autodesk.Revit.UI;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,7 +27,25 @@ namespace RevitUtils
             return mepCurve.ConnectorManager.Connectors;
         }
 
-        //TODO:break打断
+        /// <summary>
+        /// 打断管线
+        /// </summary>
+        /// <param name="mepCurve"></param>
+        /// <param name="ptBreak"></param>
+        /// <returns>如果成功，返回新mepCurve元素的Id；如果失败，返回ElementId.InvalidElementId</returns>
+        public static ElementId BreakCurve(this MEPCurve mepCurve, XYZ ptBreak)
+        {
+            if (mepCurve is Pipe || mepCurve is FlexPipe)
+            {
+                return PlumbingUtils.BreakCurve(mepCurve.Document, mepCurve.Id, ptBreak);
+            }
+            else if (mepCurve is Duct || mepCurve is FlexDuct)
+            {
+                return MechanicalUtils.BreakCurve(mepCurve.Document, mepCurve.Id, ptBreak);
+            }
+
+            return ElementId.InvalidElementId;
+        }
     }
 
     public static class ConnectorUtils

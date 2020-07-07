@@ -752,4 +752,20 @@ namespace RevitUtils
 
         #endregion
     }
+
+    /// <summary>
+    /// Curve Class is Inherited from Element
+    /// and its subclass has
+    /// CurveByPoints                       由一系列点组成的线，与ModelCurve区别的是，他没有引用草图平面
+    /// DetailCurve                         详图线
+    /// ModelCurve                          模型线
+    /// Structure.AreaReinforcementCurve    区域钢筋线 AreaReinforcement 的BoundaryCurve
+    /// SymbolicCurve                       符号线，例如，里面中的门的开门方向的符号线
+    /// </summary>
+    public static class CurveElementUtils
+    {
+        #region CurveElement Related
+        //详见 CurveByPointsUtils
+        #endregion
+    }
 }
