@@ -322,7 +322,7 @@ namespace RevitUtils
             var reference = RevitExtensions.GetReferenceByRay(document, startPoint, toWallDir, categories.ToArray());
 
             Element boundaryElement = null;
-            if (reference != null && reference.Proximity < MathHelper.AlmostEps + stepInRoom)
+            if (reference != null && reference.Proximity < MathHelper.Eps + stepInRoom)
             {
                 boundaryElement = document.GetElement(reference.GetReference());
             }
