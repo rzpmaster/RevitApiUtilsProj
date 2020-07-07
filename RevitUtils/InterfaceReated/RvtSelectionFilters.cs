@@ -2,7 +2,7 @@
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI.Selection;
 
-namespace RevitUtils
+namespace RevitUtils.InterfaceReated
 {
     /// <summary>
     /// 链接文件中的房间的选择过滤器
