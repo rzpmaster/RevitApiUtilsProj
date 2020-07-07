@@ -183,7 +183,7 @@ namespace RevitUtils
         /// 拉伸Extrusion 融合Blend 旋转Revolved 放样Swept 放样融合SweptBlend
 
         /// <summary>
-        /// 判断一个点是否在多边形内部（xoy平面内）
+        /// 判断一个点是否在多边形内部(xoy平面内，不考虑高度)
         /// http://alienryderflex.com/polygon/
         /// https://github.com/wieslawsoltes/Math.Spatial/blob/master/src/Math.Spatial/Polygon2.cs
         /// </summary>
@@ -191,13 +191,13 @@ namespace RevitUtils
         /// <param name="point">要判断的点</param>
         /// <returns></returns>
         /// <remarks>不安全，没有判断边界条件</remarks>
-        public static bool IsPointInPolygon(IList<XYZ> polygon, XYZ point)
+        public static bool IsPointInPolygon(IList<XYZ> polygon, UV point)
         {
             bool contains = false;
             for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
             {
-                if (((polygon[i].Y > point.Y) != (polygon[j].Y > point.Y))
-                    && (point.X < (((polygon[j].X - polygon[i].X) * (point.Y - polygon[i].Y)) / (polygon[j].Y - polygon[i].Y)) + polygon[i].X))
+                if (((polygon[i].Y > point.V) != (polygon[j].Y > point.V))
+                    && (point.U < (((polygon[j].X - polygon[i].X) * (point.V - polygon[i].Y)) / (polygon[j].Y - polygon[i].Y)) + polygon[i].X))
                 {
                     contains = !contains;
                 }
@@ -205,10 +205,61 @@ namespace RevitUtils
             return contains;
         }
 
+        public static bool IsPointInPolygon(IList<XYZ> polygon, XYZ point)
+        {
+            return IsPointInPolygon(polygon, point.ToUV());
+        }
+
         public static bool IsPointInPolygon(this CurveLoop loop, XYZ point)
         {
             var polygon = loop.ToPointsList();
             return IsPointInPolygon(polygon, point);
+        }
+
+        public static bool IsPointInPolygon(this IList<CurveLoop> loops, XYZ point)
+        {
+            bool isInPolygon = false;
+            foreach (CurveLoop loop in loops)
+            {
+                if (IsPointInPolygon(loop, point)) isInPolygon = !isInPolygon;
+            }
+            return isInPolygon;
+        }
+
+        /// <summary>
+        /// 判断线是否在多边形内(xoy平面内，不考虑高度)
+        /// </summary>
+        /// <param name="loop"></param>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public static bool IsCurveInPolygon(this CurveLoop loop, Curve curve)
+        {
+            return IsPointInPolygon(loop, curve.GetEndPoint(0)) &&
+                   IsPointInPolygon(loop, curve.GetEndPoint(1));
+        }
+
+        public static bool IsCurveInPolygon(this IList<CurveLoop> loops, Curve curve)
+        {
+            return IsPointInPolygon(loops, curve.GetEndPoint(0)) &&
+                   IsPointInPolygon(loops, curve.GetEndPoint(1));
+        }
+
+        /// <summary>
+        /// 判断线是否与多边形相交(xoy平面内，不考虑高度)
+        /// </summary>
+        /// <param name="loop"></param>
+        /// <param name="curve"></param>
+        /// <returns></returns>
+        public static bool IsCurveIntersectPolygon(this CurveLoop loop, Curve curve)
+        {
+            return IsPointInPolygon(loop, curve.GetEndPoint(0)) ^
+                   IsPointInPolygon(loop, curve.GetEndPoint(1));
+        }
+
+        public static bool IsCurveIntersectPolygon(this IList<CurveLoop> loops, Curve curve)
+        {
+            return IsPointInPolygon(loops, curve.GetEndPoint(0)) ^
+                   IsPointInPolygon(loops, curve.GetEndPoint(1));
         }
     }
 }

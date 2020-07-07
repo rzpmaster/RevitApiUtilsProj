@@ -253,7 +253,7 @@ namespace RevitUtils
         /// <param name="withinThisCurveBounds">第一条线是否有界，默认为true</param>
         /// <param name="withinOtherCurveBounds">第一条线是否有界，默认为true</param>
         /// <returns></returns>
-        public static XYZ[] ComputeClosestPoints(this Curve curve, Curve other, bool withinThisCurveBounds=true, bool withinOtherCurveBounds=true)
+        public static XYZ[] ComputeClosestPoints(this Curve curve, Curve other, bool withinThisCurveBounds = true, bool withinOtherCurveBounds = true)
         {
             curve.ComputeClosestPoints(other, withinThisCurveBounds, withinOtherCurveBounds, false, out IList<ClosestPointsPairBetweenTwoCurves> ps);
             return new XYZ[2] { ps.FirstOrDefault()?.XYZPointOnFirstCurve, ps.FirstOrDefault()?.XYZPointOnSecondCurve };
@@ -304,29 +304,13 @@ namespace RevitUtils
         {
             var p1 = curve.GetEndPoint(0);
             var p2 = curve.GetEndPoint(1);
-            XYZ[] c1 = new XYZ[2] { p1, p2 };
 
-            var p3 = other.GetEndPoint(0);
-            var p4 = other.GetEndPoint(1);
-            XYZ[] c2 = new XYZ[2] { p3, p4 };
+            var pt1 = other.ComputeClosestEndPoint(p1);
+            double dist1 = pt1.DistanceTo(p1);
+            var pt2 = other.ComputeClosestEndPoint(p2);
+            double dist2 = pt2.DistanceTo(p2);
 
-            XYZ pt1 = null, pt2 = null;
-            double maxDis = 0;
-            foreach (var i in c1)
-            {
-                foreach (var j in c2)
-                {
-                    var distance = i.DistanceTo(j);
-                    if (distance > maxDis)
-                    {
-                        maxDis = distance;
-                        pt1 = i;
-                        pt2 = j;
-                    }
-                }
-            }
-
-            return new XYZ[2] { pt1, pt2 };
+            return dist1 < dist2 ? new XYZ[2] { p1, pt1 } : new XYZ[2] { p2, pt2 };
         }
 
         /// <summary>
@@ -335,25 +319,12 @@ namespace RevitUtils
         /// <param name="curve"></param>
         /// <param name="other"></param>
         /// <returns></returns>
-        public static XYZ ComputeClosestEndPoints(this Curve curve, XYZ targetPoint)
+        public static XYZ ComputeClosestEndPoint(this Curve curve, XYZ targetPoint)
         {
             var p1 = curve.GetEndPoint(0);
             var p2 = curve.GetEndPoint(1);
-            XYZ[] c1 = new XYZ[2] { p1, p2 };
 
-            XYZ pt1 = null;
-            double minDis = double.MaxValue;
-            foreach (var i in c1)
-            {
-                var distance = i.DistanceTo(targetPoint);
-                if (distance < minDis)
-                {
-                    minDis = distance;
-                    pt1 = i;
-                }
-            }
-
-            return pt1;
+            return targetPoint.DistanceTo(p1) < targetPoint.DistanceTo(p2) ? p1 : p2;
         }
 
         #endregion
@@ -741,13 +712,12 @@ namespace RevitUtils
         /// </summary>
         /// <param name="xYZ"></param>
         /// <returns></returns>
-        public static UV ToUV(this XYZ xYZ)
+        public static UV ToUV(this XYZ xyz)
         {
-            if (xYZ == null)
+            if (xyz == null)
                 return null;
 
-            UV uv = new UV(xYZ.X, xYZ.Y);
-            return uv;
+            return new UV(xyz.X, xyz.Y);
         }
 
         #endregion

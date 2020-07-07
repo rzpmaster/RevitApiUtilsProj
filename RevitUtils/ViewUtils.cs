@@ -103,5 +103,38 @@ namespace RevitUtils
 
             return uiView;
         }
+
+        /// <summary>
+        /// 获取剖面视图在平面视图上的范围框 CurveLoop（可能又一定的倾斜角度）, Z = minZ
+        /// </summary>
+        /// <param name="viewSection"></param>
+        /// <returns></returns>
+        public static CurveLoop GetViewSectionPlaneLoop(ViewSection viewSection)
+        {
+            var pts = GetViewSectionPlanePointsLoop(viewSection);
+            return pts.ToCurveLoop();
+        }
+
+        /// <summary>
+        /// 获取剖面视图在平面视图上的范围框的点的序列, Z = minZ
+        /// </summary>
+        /// <param name="viewSection"></param>
+        /// <returns></returns>
+        public static List<XYZ> GetViewSectionPlanePointsLoop(this ViewSection viewSection)
+        {
+            BoundingBoxXYZ bbox = viewSection.CropBox;
+            Double farCropDist = viewSection.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR).AsDouble();
+
+            var direct = viewSection.ViewDirection.Normalize();
+            var minPt = bbox.Transform.OfPoint(bbox.Min);
+            var maxPt = bbox.Transform.OfPoint(bbox.Max);
+
+            var p1 = new XYZ(minPt.X, minPt.Y, minPt.Z);
+            var p3 = new XYZ(maxPt.X, maxPt.Y, minPt.Z);
+            var p2 = p3 - direct * farCropDist;
+            var p4 = p1 + direct * farCropDist;
+
+            return new List<XYZ> { p1, p2, p3, p4 };
+        }
     }
 }
