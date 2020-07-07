@@ -31,6 +31,14 @@ namespace RevitUtils
             }
         }
 
+        public static double AlmostEps
+        {
+            get
+            {
+                return almostTolerance;
+            }
+        }
+
         public static bool IsZero(this double a, double tolerance)
         {
             return tolerance > Math.Abs(a);
