@@ -149,6 +149,7 @@ namespace RevitUtils
         /// <param name="targetElementIds">目标元素的ElementId集合，如果你要查找链接文件中的元素，这个集合必须是RevitLinkInstance的Id，换句话说，集合中的元素Id不许都是当前文件中的Id</param>
         /// <param name="elementFilter">目标元素的过滤器</param>
         /// <returns></returns>
+        /// <remarks>注意，view3D的视图可见性和裁剪框会影响结果</remarks>
         public static ReferenceIntersector GetReferenceIntersector(Document currDocument, bool isFindInLinks, FindReferenceTarget findReferenceTarget, ICollection<ElementId> targetElementIds = null, ElementFilter elementFilter = null)
         {
             FilteredElementCollector collector = new FilteredElementCollector(currDocument);
@@ -176,10 +177,7 @@ namespace RevitUtils
         /// <returns></returns>
         public static Element GetElementByReferenceWithContext(this ReferenceWithContext referenceWithContext, Document currDoc)
         {
-            if (referenceWithContext == null)
-            {
-                return null;
-            }
+            if (referenceWithContext == null) return null;
 
             Reference reference = referenceWithContext.GetReference();
             Element element = null;

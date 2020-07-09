@@ -92,7 +92,7 @@ namespace RevitUtils
         public static double GetRoomHeightByRay(this Room room, XYZ pointInRoom, Document currDocument)
         {
             if (room.Document.IsLinked && currDocument == null)
-                throw new InvalidOperationException("如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
+                throw new InvalidOperationException("currDocument为空，如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
 
             ElementFilter elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
             var referenceIntersector = RevitExtensions.GetReferenceIntersector(
@@ -266,7 +266,7 @@ namespace RevitUtils
         public static IList<List<RoomBoundary>> GetRoomSurroundingElements(this Room room, Document currDocument)
         {
             if (room.Document.IsLinked && currDocument == null)
-                throw new InvalidOperationException("如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
+                throw new InvalidOperationException("currDocument为空，如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
 
             IList<IList<BoundarySegment>> segmentsloops = null;
             IList<CurveLoop> curveLoop = null;
@@ -437,10 +437,15 @@ namespace RevitUtils
         /// 计算房间吊顶到房间地面的高度，单位foot
         /// </summary>
         /// <param name="room"></param>
-        /// <param name="currDocument">当前文件,射线法需要用到</param>
+        /// <param name="currDocument">当前文件</param>
         /// <returns></returns>
-        public static double? GetRoomCeilingHeight(this Room room, Document currDocument)
+        /// <remarks>当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法计算房间高度一</remarks>
+        public static double? GetRoomCeilingHeight(this Room room, Document currDocument=null)
         {
+            bool canUseRayMethod = true;
+            if (room.Document.IsLinked && currDocument == null)
+                canUseRayMethod = false;
+
             var hasCeiling = HasCeiling(room, out IList<Element> ceilings, currDocument);
             if (!hasCeiling) return null;
 
@@ -448,13 +453,16 @@ namespace RevitUtils
             levels.Sort();
             var height = levels.FirstOrDefault(e => e > room.Level.Elevation) - room.Level.Elevation;
 
-            // 再次使用射线法查找准确的高度,防止找到的天花板在相邻的房间内而导致的错误
-            var point = GetRoomCenterPoint(room);
-            point += new XYZ(0, 0, height / 2);
-            var ceilingHeight = GetRoomCeilingHeightByRay(room, point, currDocument);
+            if (canUseRayMethod)
+            {
+                // 再次使用射线法查找准确的高度,防止找到的天花板在相邻的房间内而导致的错误
+                var point = GetRoomCenterPoint(room);
+                point += new XYZ(0, 0, height / 2);
+                var ceilingHeight = GetRoomCeilingHeightByRay(room, point, currDocument);
 
-            if (!double.IsNaN(ceilingHeight)) return ceilingHeight;
-            return null;
+                if (!double.IsNaN(ceilingHeight)) return ceilingHeight; 
+            }
+            return height;
         }
 
         /// <summary>
