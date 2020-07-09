@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RevitUtils
 {
@@ -13,12 +14,43 @@ namespace RevitUtils
         /// <returns></returns>
         public static Document GetLinkedDocumnet(Document currDoc, Reference linkedRef)
         {
+            return GetRevitLinkInstance(currDoc, linkedRef).GetLinkDocument();
+        }
+
+        /// <summary>
+        /// 获取链接文件实例
+        /// </summary>
+        /// <param name="currDoc"></param>
+        /// <param name="linkedRef"></param>
+        /// <returns></returns>
+        public static RevitLinkInstance GetRevitLinkInstance(Document currDoc, Reference linkedRef)
+        {
+            if (linkedRef.LinkedElementId == ElementId.InvalidElementId) return null;
+
             string stableReflink = linkedRef.ConvertToStableRepresentation(currDoc).Split(':')[0];
             Reference refLink = Reference.ParseFromStableRepresentation(currDoc, stableReflink);
-            RevitLinkInstance rli_return = currDoc.GetElement(refLink) as RevitLinkInstance;
-            Document linkdoc = rli_return.GetLinkDocument();
+            return currDoc.GetElement(refLink) as RevitLinkInstance;
+        }
 
-            return linkdoc;
+        /// <summary>
+        /// 获取链接文件实例
+        /// </summary>
+        /// <param name="currDoc"></param>
+        /// <param name="linkedElement"></param>
+        /// <returns></returns>
+        public static RevitLinkInstance GetRevitLinkInstance(Document currDoc, Element linkedElement)
+        {
+            if (!linkedElement.Document.IsLinked) return null;
+
+            FilteredElementCollector collector = new FilteredElementCollector(currDoc);
+            var linkInstances = collector.OfClass(typeof(RevitLinkInstance)).ToElements().Cast<RevitLinkInstance>();
+            foreach (RevitLinkInstance linkInstance in linkInstances)
+            {
+                Document document = linkInstance.GetLinkDocument();
+                if (document.Title == linkedElement.Document.Title) return linkInstance;
+            }
+
+            return null;
         }
 
         /// <summary>

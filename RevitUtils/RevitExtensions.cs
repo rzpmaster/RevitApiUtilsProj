@@ -141,40 +141,58 @@ namespace RevitUtils
         #endregion
 
         /// <summary>
-        /// 从给定点发出一条射线,返回第一个碰到的ReferenceWithContext
+        /// 构造射线法查找对象
         /// </summary>
-        /// <param name="document"></param>
-        /// <param name="point"></param>
-        /// <param name="rayDirection"></param>
-        /// <param name="targetCategories"></param>
+        /// <param name="currDocument">当前文件，如果你需要查找链接文件，这个参数也必须是uidoc.ActiveDocument</param>
+        /// <param name="isFindInLinks">是否要查找连接文件</param>
+        /// <param name="findReferenceTarget">需要查找的类型，可以是 Element Face Curve Edge Mesh 和 All </param>
+        /// <param name="targetElementIds">目标元素的ElementId集合，如果你要查找链接文件中的元素，这个集合必须是RevitLinkInstance的Id，换句话说，集合中的元素Id不许都是当前文件中的Id</param>
+        /// <param name="elementFilter">目标元素的过滤器</param>
         /// <returns></returns>
-        public static ReferenceWithContext GetReferenceByRay(Document document, XYZ point, XYZ rayDirection, params BuiltInCategory[] targetCategories)
+        public static ReferenceIntersector GetReferenceIntersector(Document currDocument, bool isFindInLinks, FindReferenceTarget findReferenceTarget, ICollection<ElementId> targetElementIds = null, ElementFilter elementFilter = null)
         {
-            FilteredElementCollector collector = new FilteredElementCollector(document);
-            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().First<View3D>(v3 => !(v3.IsTemplate));
+            FilteredElementCollector collector = new FilteredElementCollector(currDocument);
+            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault<View3D>(v3 => !(v3.IsTemplate));
+            if (view3D == null) return null;
 
-            // 目标元素类型或过滤器
-            List<ElementFilter> filters = new List<ElementFilter>();
-            foreach (var category in targetCategories)
+            ReferenceIntersector referenceIntersector = new ReferenceIntersector(view3D)
             {
-                ElementFilter filter = new ElementCategoryFilter(category);
-                filters.Add(filter);
-            }
-            LogicalOrFilter orFilter = new LogicalOrFilter(filters);
+                FindReferencesInRevitLinks = isFindInLinks,
+                TargetType = findReferenceTarget
+            };
+            if (targetElementIds != null && targetElementIds.Count > 0)
+                referenceIntersector.SetTargetElementIds(targetElementIds);
+            if (elementFilter != null)
+                referenceIntersector.SetFilter(elementFilter);
 
-            ReferenceIntersector referenceIntersector = new ReferenceIntersector(orFilter, FindReferenceTarget.Element, view3D);
-            referenceIntersector.FindReferencesInRevitLinks = document.IsLinked;
-            var referenceWithContext = referenceIntersector.FindNearest(point, rayDirection);
-            if (referenceWithContext != null)
+            return referenceIntersector;
+        }
+
+        /// <summary>
+        /// 通过查找到的ReferenceWithContext 获取对象
+        /// </summary>
+        /// <param name="referenceWithContext"></param>
+        /// <param name="currDoc">当前稳点 Document</param>
+        /// <returns></returns>
+        public static Element GetElementByReferenceWithContext(this ReferenceWithContext referenceWithContext, Document currDoc)
+        {
+            if (referenceWithContext == null)
             {
-                if ((referenceWithContext.Proximity > MathHelper.Eps) &&
-                    (referenceWithContext.Proximity < 50 * 1000 * MathHelper.Mm2Feet)) //大于50m就算获取失败
-                {
-                    return referenceWithContext;
-                }
+                return null;
             }
 
-            return null;
+            Reference reference = referenceWithContext.GetReference();
+            Element element = null;
+            if (reference.ElementId != ElementId.InvalidElementId)
+            {//LinkedElement的ElementId是RevitLinkInstance
+                element = currDoc.GetElement(reference.ElementId);
+            }
+            if (reference.LinkedElementId != ElementId.InvalidElementId)
+            {
+                element = LinkedElementUtils.GetLinkedDocumnet(currDoc, reference).GetElement(reference.LinkedElementId);
+            }
+
+            return element;
         }
     }
 }

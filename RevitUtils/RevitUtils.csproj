@@ -53,6 +53,7 @@
     <Compile Include="RevitExtensions.cs" />
     <Compile Include="RoomUtils.cs" />
     <Compile Include="InterfaceReated\RvtSelectionFilters.cs" />
+    <Compile Include="TestFile\RoomHeightTestCommand.cs" />
     <Compile Include="TestFile\TestCommand.cs" />
     <Compile Include="VectorUtiles.cs" />
     <Compile Include="ViewUtils.cs" />

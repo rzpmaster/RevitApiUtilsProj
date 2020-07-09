@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.DB.IFC;
 using System;
 using System.Collections.Generic;
@@ -19,14 +20,22 @@ namespace RevitUtils
         /// 获得房间地板到楼板的距离，单位foot
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDocument">当前文件，如果是房间是链接文件中的房间，该参数必须是当前文件</param>
         /// <param name="roomHeight">房间高度</param>
         /// <returns>
         /// -1 表示结果不可靠，  返回的是 参数法 获取的高度 ：当前房间的参数“房间标识高度”的值
         /// 0  表示结果一般可靠，返回的是 标高法 获取的高度 ：房间上下两层的标高之间的距离
         /// 1  表示结果很可靠，  返回的是 射线法 获取的高度 ：房间上下两个楼板之间的距离
         /// </returns>
-        public static int TryGetRoomHeight(this Room room, out double roomHeight)
+        /// <remarks>
+        /// 当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法
+        /// </remarks>
+        public static int TryGetRoomHeight(this Room room, out double roomHeight, Document currDocument = null)
         {
+            bool canUseRayMethod = true;
+            if (room.Document.IsLinked && currDocument == null)
+                canUseRayMethod = false;
+
             var paramHeight = GetRoomHeightByParam(room);   //从房间参数中获取的房间高度
 
             var elevationHeight = GetRoomHeightByAdjacentElevation(room);
@@ -41,19 +50,23 @@ namespace RevitUtils
                 if (double.IsNaN(elevationHeight)) elevationHeight = room.Level.Elevation + 5000 * MathHelper.Mm2Feet;
             }
 
-            //获取房间的楼板
-            var bbox = GetRoomMaxBoundingBox(room, elevationHeight);
-            var floors = room.Document.GetElementsByBbox(bbox, BuiltInCategory.OST_Floors);
-            if (floors.Count == 0)
-            {//没有楼板，射线法失败
-            }
-            else
+            if (canUseRayMethod)
             {
-                //以下使用射线法，得到准确的房间高度
-                var point = GetRoomCenterPoint(room);
-                point += new XYZ(0, 0, elevationHeight / 2);
-                roomHeight = GetRoomHeightByRay(room, point);
-                if (!double.IsNaN(roomHeight)) return 1;
+                //获取房间的楼板
+                var bbox = GetRoomMaxBoundingBox(room, elevationHeight);
+                var floors = room.Document.GetElementsByBbox(bbox, BuiltInCategory.OST_Floors);
+                if (floors.Count == 0)
+                {//没有楼板，射线法失败
+                }
+                else
+                {
+                    //以下使用射线法，得到准确的房间高度
+                    var point = GetRoomCenterPoint(room);
+                    point += new XYZ(0, 0, elevationHeight / 2);
+
+                    roomHeight = GetRoomHeightByRay(room, point, currDocument);
+                    if (!double.IsNaN(roomHeight)) return 1;
+                }
             }
 
             //射线法失败
@@ -74,12 +87,25 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <param name="pointInRoom">房间内一点，请确保该点在房间上下两个楼板范围内，否则计算值错误</param>
+        /// <param name="currDocument">当前文件，射线法需要用到</param>
         /// <returns></returns>
-        public static double GetRoomHeightByRay(this Room room, XYZ pointInRoom)
+        public static double GetRoomHeightByRay(this Room room, XYZ pointInRoom, Document currDocument)
         {
-            var topReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ, BuiltInCategory.OST_Floors);
+            if (room.Document.IsLinked && currDocument == null)
+                throw new InvalidOperationException("如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
+
+            ElementFilter elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
+            var referenceIntersector = RevitExtensions.GetReferenceIntersector(
+                currDocument,
+                room.Document.IsLinked,
+                findReferenceTarget: FindReferenceTarget.All,
+                targetElementIds: null,
+                elementFilter: elementFilter);
+
+            var topReference = referenceIntersector.FindNearest(pointInRoom, XYZ.BasisZ);
             if (topReference == null) return double.NaN;
-            var bottomReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ.Negate(), BuiltInCategory.OST_Floors);
+
+            var bottomReference = referenceIntersector.FindNearest(pointInRoom, XYZ.BasisZ.Negate());
             if (bottomReference == null) return double.NaN;
 
             return topReference.Proximity + bottomReference.Proximity;
@@ -216,8 +242,10 @@ namespace RevitUtils
         /// 获得房间的拉伸实体Solid
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDoc">当前文件</param>
         /// <returns></returns>
-        public static Solid GetRoomActualSolid(this Room room)
+        /// <remarks>当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法计算房间高度</remarks>
+        public static Solid GetRoomActualSolid(this Room room, Document currDoc = null)
         {
             var loops = GetRoomBoundaryAsCurveLoopArray(room);
             if (loops == null)
@@ -225,7 +253,7 @@ namespace RevitUtils
                 return null;
             }
 
-            TryGetRoomHeight(room, out double roomHeight);
+            TryGetRoomHeight(room, out double roomHeight, currDoc);
             return GeometryCreationUtilities.CreateExtrusionGeometry(loops, XYZ.BasisZ, roomHeight);
         }
 
@@ -233,9 +261,13 @@ namespace RevitUtils
         /// 获得房间边界及边界组成元素
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDocument">当前文件，射线法需要用到</param>
         /// <returns>内层List为CurveLoop组成Curve,外层IList是组成CurveLoop的个数</returns>
-        public static IList<List<RoomBoundary>> GetRoomSurroundingElements(this Room room)
+        public static IList<List<RoomBoundary>> GetRoomSurroundingElements(this Room room, Document currDocument)
         {
+            if (room.Document.IsLinked && currDocument == null)
+                throw new InvalidOperationException("如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
+
             IList<IList<BoundarySegment>> segmentsloops = null;
             IList<CurveLoop> curveLoop = null;
             var bndOpt = new SpatialElementBoundaryOptions();
@@ -273,7 +305,7 @@ namespace RevitUtils
             for (int i = 0; i < segmentsloops.Count; i++)
             {
                 bool isCounterclockwise = curveLoop[i].IsCounterclockwise(XYZ.BasisZ);
-                var elements = GetElementsByBoundarySegments(room.Document, segmentsloops[i], isCounterclockwise);
+                var elements = GetElementsByBoundarySegments(currDocument, segmentsloops[i], isCounterclockwise);
                 rstBoundaryList.Add(elements);
             }
 
@@ -296,7 +328,7 @@ namespace RevitUtils
                     Curve segmentCure = segment.GetCurve();
                     if (element == null)
                     {//使用射线法找到该 segment 对应的元素
-                        element = GetSegmentElementByRay(segmentCure, document, isCounterclockwise);
+                        element = GetSegmentElementByRay(document, segmentCure, isCounterclockwise);
                     }
                     elements.Add(new RoomBoundary() { BoundaryCurve = segmentCure, BoundaryElement = element, IsOuterBoundary = isCounterclockwise });
                 }
@@ -305,7 +337,7 @@ namespace RevitUtils
             return elements;
         }
 
-        private static Element GetSegmentElementByRay(Curve segmentCure, Document document, bool isCounterclockwise)
+        private static Element GetSegmentElementByRay(Document document, Curve segmentCure, bool isCounterclockwise)
         {
             double stepInRoom = 0.1;
             XYZ direction = (segmentCure.GetEndPoint(1) - segmentCure.GetEndPoint(0)).Normalize();
@@ -319,18 +351,27 @@ namespace RevitUtils
             XYZ toWallDir = isCounterclockwise ? leftDirection.Negate() : leftDirection;
 
             //默认过滤 墙 柱子 门 幕墙嵌板
-            var categories = new List<BuiltInCategory>{
-                BuiltInCategory.OST_Walls,
-                BuiltInCategory.OST_Columns,
-                BuiltInCategory.OST_Doors,
-                BuiltInCategory.OST_CurtainWallPanels,   //幕墙嵌板
+            var filters = new List<ElementFilter>{
+                new ElementCategoryFilter( BuiltInCategory.OST_Walls),
+                new ElementCategoryFilter(BuiltInCategory.OST_Columns),
+                new ElementCategoryFilter(BuiltInCategory.OST_Doors),
+                new ElementCategoryFilter(BuiltInCategory.OST_CurtainWallPanels),   //幕墙嵌板
             };
-            var reference = RevitExtensions.GetReferenceByRay(document, startPoint, toWallDir, categories.ToArray());
+            var orFilter = new LogicalOrFilter(filters);
+
+            var referenceIntersector = RevitExtensions.GetReferenceIntersector(
+                document,
+                true,
+                findReferenceTarget: FindReferenceTarget.All,
+                targetElementIds: null,
+                elementFilter: orFilter);
+
+            var reference = referenceIntersector.FindNearest(startPoint, toWallDir);
 
             Element boundaryElement = null;
             if (reference != null && reference.Proximity < MathHelper.Eps + stepInRoom)
             {
-                boundaryElement = document.GetElement(reference.GetReference());
+                boundaryElement = reference.GetElementByReferenceWithContext(document);
             }
             return boundaryElement;
         }
@@ -355,10 +396,11 @@ namespace RevitUtils
         /// 获取房间最外圈的元素
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDocument">当前文件，射线法需要用到</param>
         /// <returns></returns>
-        public static List<Element> GetRoomMaxSurroundingElements(this Room room)
+        public static List<Element> GetRoomMaxSurroundingElements(this Room room, Document currDocument)
         {
-            var allElements = GetRoomSurroundingElements(room);
+            var allElements = GetRoomSurroundingElements(room, currDocument);
             return allElements.FirstOrDefault(rb => rb.FirstOrDefault()?.IsOuterBoundary ?? false)?.Select(e => e.BoundaryElement).ToList();
         }
 
@@ -366,10 +408,12 @@ namespace RevitUtils
         /// 判断给定房间是否有吊顶
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDocument">当前文件</param>
         /// <returns></returns>
-        public static bool HasCeiling(this Room room)
+        /// <remarks>当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法计算房间高度一</remarks>
+        public static bool HasCeiling(this Room room, Document currDocument = null)
         {
-            return HasCeiling(room, out _);
+            return HasCeiling(room, out _, currDocument);
         }
 
         /// <summary>
@@ -377,10 +421,13 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <param name="ceilings">房间内的吊顶</param>
+        /// <param name="currDocument">当前文件</param>
         /// <returns></returns>
-        public static bool HasCeiling(this Room room, out IList<Element> ceilings)
+        /// <remarks>当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法计算房间高度一</remarks>
+        public static bool HasCeiling(this Room room, out IList<Element> ceilings, Document currDocument = null)
         {
-            TryGetRoomHeight(room, out double height);
+            TryGetRoomHeight(room, out double height, currDocument);
+
             var bbox = room.GetRoomMaxBoundingBox(height);
             ceilings = room.Document.GetElementsByBbox(bbox, BuiltInCategory.OST_Ceilings);
             return ceilings.Count > 0;
@@ -390,14 +437,12 @@ namespace RevitUtils
         /// 计算房间吊顶到房间地面的高度，单位foot
         /// </summary>
         /// <param name="room"></param>
+        /// <param name="currDocument">当前文件,射线法需要用到</param>
         /// <returns></returns>
-        public static double? GetRoomCeilingHeight(this Room room)
+        public static double? GetRoomCeilingHeight(this Room room, Document currDocument)
         {
-            var hasCeiling = HasCeiling(room, out IList<Element> ceilings);
-            if (!hasCeiling)
-            {
-                return null;
-            }
+            var hasCeiling = HasCeiling(room, out IList<Element> ceilings, currDocument);
+            if (!hasCeiling) return null;
 
             var levels = ceilings.Select(e => e.ElementLevel().Elevation).ToList();
             levels.Sort();
@@ -406,7 +451,7 @@ namespace RevitUtils
             // 再次使用射线法查找准确的高度,防止找到的天花板在相邻的房间内而导致的错误
             var point = GetRoomCenterPoint(room);
             point += new XYZ(0, 0, height / 2);
-            var ceilingHeight = GetRoomCeilingHeightByRay(room, point);
+            var ceilingHeight = GetRoomCeilingHeightByRay(room, point, currDocument);
 
             if (!double.IsNaN(ceilingHeight)) return ceilingHeight;
             return null;
@@ -417,12 +462,38 @@ namespace RevitUtils
         /// </summary>
         /// <param name="room"></param>
         /// <param name="pointInRoom">房间内一点，请确保该点在房间下楼板和上天花板内，否则计算值错误</param>
+        /// <param name="currDocument">当前文件，射线法需要用到</param>
         /// <returns></returns>
-        public static double GetRoomCeilingHeightByRay(Room room, XYZ pointInRoom)
+        public static double GetRoomCeilingHeightByRay(this Room room, XYZ pointInRoom, Document currDocument)
         {
-            var topReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ, BuiltInCategory.OST_Ceilings);
+            if (room.Document.IsLinked && currDocument == null)
+                throw new InvalidOperationException("如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
+
+            ElementFilter elementFilter;
+            ReferenceIntersector referenceIntersector;
+
+            //向上找天花板
+            elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Ceilings);
+            referenceIntersector = RevitExtensions.GetReferenceIntersector(
+                currDocument,
+                room.Document.IsLinked,
+                findReferenceTarget: FindReferenceTarget.All,
+                targetElementIds: null,
+                elementFilter: elementFilter);
+
+            var topReference = referenceIntersector.FindNearest(pointInRoom, XYZ.BasisZ);
             if (topReference == null) return double.NaN;
-            var bottomReference = RevitExtensions.GetReferenceByRay(room.Document, pointInRoom, XYZ.BasisZ.Negate(), BuiltInCategory.OST_Floors);
+
+            //向下找楼板
+            elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
+            referenceIntersector = RevitExtensions.GetReferenceIntersector(
+               currDocument,
+               room.Document.IsLinked,
+               findReferenceTarget: FindReferenceTarget.All,
+               targetElementIds: null,
+               elementFilter: elementFilter);
+
+            var bottomReference = referenceIntersector.FindNearest(pointInRoom, XYZ.BasisZ.Negate());
             if (bottomReference == null) return double.NaN;
 
             return topReference.Proximity + bottomReference.Proximity;
