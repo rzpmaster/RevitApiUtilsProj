@@ -14,7 +14,10 @@ namespace RevitUtils.TestFile
             try
             {
                 // TODO: 测试代码这里实现
-
+                var app = commandData.Application.Application;
+                var t1 = app.VertexTolerance;
+                var t2 = app.AngleTolerance;
+                var t3 = app.ShortCurveTolerance;
             }
             catch
             {

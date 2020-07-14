@@ -90,14 +90,42 @@ namespace RevitUtils
         #endregion
 
         #region Compare Related
-        const double tolerance = 1.0E-9;
+        const double tolerance = 1.0E-6;
         const double almostTolerance = 1E-2;
+
+        const double rvtVertexTolerance = 0.0005233832795;              //5.23*10E-4    0.16mm
+        const double rvtAngleTolerance = 0.0017453292519943279;         //1.74*10E-3    0.1°
+        const double rvtShortCurveTolerance = 0.0025602645572916664;    //2.56*10E-3    0.78mm
 
         public static double Eps
         {
             get
             {
                 return tolerance;
+            }
+        }
+
+        public static double VertexTolerance
+        {
+            get
+            {
+                return rvtVertexTolerance;
+            }
+        }
+
+        public static double AngleTolerance
+        {
+            get
+            {
+                return rvtAngleTolerance;
+            }
+        }
+
+        public static double ShortCurveTolerance
+        {
+            get
+            {
+                return rvtShortCurveTolerance;
             }
         }
 

@@ -130,7 +130,7 @@ namespace RevitUtils
         /// <param name="tolerance">两向量的角度容忍值，默认为1°（角度制）</param>
         /// <returns></returns>
         /// <remarks>向量角度在±tolerance之间</remarks>
-        public static bool IsAlmostParallelTo(this Curve curve1, Curve curve2, double tolerance)
+        public static bool IsAlmostParallelToByAngle(this Curve curve1, Curve curve2, double tolerance = 1)
         {
             if (curve1 is Line && curve2 is Line)
             {
@@ -149,13 +149,18 @@ namespace RevitUtils
         /// <returns>如果平行,返回他们之间的距离;否则,返回NaN</returns>
         public static double DistanceTo(this Curve curve1, Curve curve2)
         {
+            Curve temp = curve1.Clone();
+            temp.MakeUnbound();
+
             if (!curve1.IsAlmostParallelTo(curve2))
             {
+                if (curve1.IsAlmostParallelToByAngle(curve2))
+                {//近似平行，返回 第二条线起点到第一条直线的距离
+                    return temp.Distance(curve2.Evaluate(0, true));
+                }
                 return double.NaN;
             }
 
-            Curve temp = curve1.Clone();
-            temp.MakeUnbound();
             return temp.Distance(curve2.Evaluate(0.5, true));
         }
 
@@ -444,21 +449,13 @@ namespace RevitUtils
         /// </summary>
         /// <param name="curveLoops">要检查的循环</param>
         /// <param name="extrDirVec">法向量</param>
-        /// <returns>如果可能，返回正确定向的曲线环。如果不是，则返回不包含循环。</returns>
+        /// <returns>
+        /// 如果可能，返回正确定向的曲线环。
+        /// <!!经测试，该方法不可靠，经常返回空!!>
+        /// </returns>
         public static IList<CurveLoop> ValidateCurveLoops(this IList<CurveLoop> curveLoops, XYZ extrDirVec)
         {
             return ExporterIFCUtils.ValidateCurveLoops(curveLoops, extrDirVec);
-        }
-
-        /// <summary>
-        /// 检查CurveLoop有效性
-        /// </summary>
-        /// <param name="loop"></param>
-        /// <param name="extrDirVec">法向量</param>
-        /// <returns></returns>
-        public static CurveLoop ValidateCurveLoop(this CurveLoop loop, XYZ extrDirVec)
-        {
-            return ExporterIFCUtils.ValidateCurveLoops(new List<CurveLoop>() { loop }, extrDirVec).FirstOrDefault();
         }
 
         #region ValidateCurveLoop Spare Method
@@ -576,7 +573,7 @@ namespace RevitUtils
             }
             else
             {//需要处理
-                bool isParallel = CurveUtils.IsParallelTo(preCurve, currCurve);
+                bool isParallel = CurveUtils.IsAlmostParallelToByAngle(preCurve, currCurve);
                 if (isParallel)
                 {//平行，求距离，距离小于300mm，将第二条直线移动到第一条直线的延长线上；否则直接相连
                     double distance = preCurve.DistanceTo(currCurve);
@@ -588,7 +585,7 @@ namespace RevitUtils
                     else
                     {
                         //直接相连
-                        var pts = CurveUtils.GetNearestPointsByTwoLine(preCurve, currCurve);
+                        var pts = CurveUtils.ComputeClosestEndPoints(preCurve, currCurve);
                         if (!pts[0].IsAlmostEqualTo(pts[1]))
                         {
                             tempLine = Line.CreateBound(pts[0], pts[1]);
@@ -611,7 +608,7 @@ namespace RevitUtils
             XYZ dir = currCurve.GetNormalInXoy(preCurve.GetEndPoint(0));
             currCurve = currCurve.CreateTransformed(Transform.CreateTranslation(dir * distance));
 
-            var pts = CurveUtils.GetNearestPointsByTwoLine(preCurve, currCurve);
+            var pts = CurveUtils.ComputeClosestEndPoints(preCurve, currCurve);
             if (!pts[0].IsAlmostEqualTo(pts[1]))
             {
                 var starPoint = pts[0];
@@ -658,35 +655,6 @@ namespace RevitUtils
             end = intersectionResult_1.Parameter;
             currTemp.MakeBound(start, end);
             currCurve = currTemp.Clone();
-        }
-
-        private static XYZ[] GetNearestPointsByTwoLine(Curve line1, Curve line2)
-        {
-            var p1 = line1.GetEndPoint(0);
-            var p2 = line1.GetEndPoint(1);
-            XYZ[] c1 = new XYZ[2] { p1, p2 };
-
-            var p3 = line2.GetEndPoint(0);
-            var p4 = line2.GetEndPoint(1);
-            XYZ[] c2 = new XYZ[2] { p3, p4 };
-
-            XYZ pt1 = null, pt2 = null;
-            double minDis = double.MaxValue;
-            foreach (var i in c1)
-            {
-                foreach (var j in c2)
-                {
-                    var distance = i.DistanceTo(j);
-                    if (distance < minDis)
-                    {
-                        minDis = distance;
-                        pt1 = i;
-                        pt2 = j;
-                    }
-                }
-            }
-
-            return new XYZ[2] { pt1, pt2 };
         }
         #endregion
 
