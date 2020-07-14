@@ -59,12 +59,15 @@ namespace RevitUtils
         }
 
         /// <summary>
-        /// Zoom给定的元素
+        /// 在当前的活动视图中 Zoom 给定的元素
         /// </summary>
-        /// <param name="UIDoc"></param>
+        /// <param name="uidoc"></param>
         /// <param name="elements"></param>
-        /// <param name="zoomFactor">0-1之间，默认为0.8，数值越小给定元素在频幕中的占比越小</param>
-        public static void ZoomAndFitElements(UIDocument uidoc, List<Element> elements, Double zoomFactor = 0.8)
+        /// <param name="zoomFactor">默认为0.8，数值越小给定元素在频幕中的占比越小</param>
+        /// <remarks>
+        /// 当 zoomFactor = 1 时，视图正好全部包裹住给定的多有元素
+        /// </remarks>
+        public static void ZoomElements(UIDocument uidoc, List<Element> elements, Double zoomFactor = 0.8)
         {
             UIView uiView = GetUIView(uidoc);
 
@@ -133,6 +136,25 @@ namespace RevitUtils
             var p4 = p1 + direct * farCropDist;
 
             return new List<XYZ> { p1, p2, p3, p4 };
+        }
+
+        /// <summary>
+        /// 获取剖面视图在模型坐标系下的 BoundingBoxXYZ（默认是局部坐标系的）
+        /// </summary>
+        /// <param name="viewSection"></param>
+        /// <returns></returns>
+        public static BoundingBoxXYZ GetViewSectionBBox(this ViewSection viewSection)
+        {
+            BoundingBoxXYZ bbox = viewSection.CropBox;
+
+            var min = bbox.Transform.OfPoint(bbox.Min);
+            var max = bbox.Transform.OfPoint(bbox.Max);
+
+            BoundingBoxXYZ newBBox = new BoundingBoxXYZ();
+            newBBox.Max = max;
+            newBBox.Min = min;
+
+            return newBBox;
         }
     }
 }
