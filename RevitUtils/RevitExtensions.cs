@@ -143,17 +143,15 @@ namespace RevitUtils
         /// <summary>
         /// 构造射线法查找对象
         /// </summary>
-        /// <param name="currDocument">当前文件，如果你需要查找链接文件，这个参数也必须是uidoc.ActiveDocument</param>
+        /// <param name="view3D">三维视图很关键，交给上层去过滤</param>
         /// <param name="isFindInLinks">是否要查找连接文件</param>
         /// <param name="findReferenceTarget">需要查找的类型，可以是 Element Face Curve Edge Mesh 和 All </param>
         /// <param name="targetElementIds">目标元素的ElementId集合，如果你要查找链接文件中的元素，这个集合必须是RevitLinkInstance的Id，换句话说，集合中的元素Id不许都是当前文件中的Id</param>
         /// <param name="elementFilter">目标元素的过滤器</param>
         /// <returns></returns>
         /// <remarks>注意，view3D的视图可见性和裁剪框会影响结果</remarks>
-        public static ReferenceIntersector GetReferenceIntersector(Document currDocument, bool isFindInLinks, FindReferenceTarget findReferenceTarget, ICollection<ElementId> targetElementIds = null, ElementFilter elementFilter = null)
+        public static ReferenceIntersector GetReferenceIntersector(View3D view3D, bool isFindInLinks, FindReferenceTarget findReferenceTarget, ICollection<ElementId> targetElementIds = null, ElementFilter elementFilter = null)
         {
-            FilteredElementCollector collector = new FilteredElementCollector(currDocument);
-            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault<View3D>(v3 => !(v3.IsTemplate));
             if (view3D == null) return null;
 
             ReferenceIntersector referenceIntersector = new ReferenceIntersector(view3D)

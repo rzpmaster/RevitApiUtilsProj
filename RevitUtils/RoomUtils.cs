@@ -95,8 +95,14 @@ namespace RevitUtils
                 throw new InvalidOperationException("currDocument为空，如果房间是链接文件中的房间，必须传递当前文件currDocument参数");
 
             ElementFilter elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
+
+            //射线法需要的三维视图，很关键，找不好就会找不到想要的结果
+            FilteredElementCollector collector = new FilteredElementCollector(currDocument);
+            //待改进
+            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault<View3D>(v3 => !(v3.IsTemplate));
+
             var referenceIntersector = RevitExtensions.GetReferenceIntersector(
-                currDocument,
+                view3D,
                 room.Document.IsLinked,
                 findReferenceTarget: FindReferenceTarget.All,
                 targetElementIds: null,
@@ -359,8 +365,13 @@ namespace RevitUtils
             };
             var orFilter = new LogicalOrFilter(filters);
 
+            //射线法需要的三维视图，很关键，找不好就会找不到想要的结果
+            FilteredElementCollector collector = new FilteredElementCollector(document);
+            //待改进
+            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault<View3D>(v3 => !(v3.IsTemplate));
+
             var referenceIntersector = RevitExtensions.GetReferenceIntersector(
-                document,
+                view3D,
                 true,
                 findReferenceTarget: FindReferenceTarget.All,
                 targetElementIds: null,
@@ -482,8 +493,14 @@ namespace RevitUtils
 
             //向上找天花板
             elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Ceilings);
+
+            //射线法需要的三维视图，很关键，找不好就会找不到想要的结果
+            FilteredElementCollector collector = new FilteredElementCollector(currDocument);
+            //待改进
+            var view3D = collector.OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault<View3D>(v3 => !(v3.IsTemplate));
+
             referenceIntersector = RevitExtensions.GetReferenceIntersector(
-                currDocument,
+                view3D,
                 room.Document.IsLinked,
                 findReferenceTarget: FindReferenceTarget.All,
                 targetElementIds: null,
@@ -494,12 +511,7 @@ namespace RevitUtils
 
             //向下找楼板
             elementFilter = new ElementCategoryFilter(BuiltInCategory.OST_Floors);
-            referenceIntersector = RevitExtensions.GetReferenceIntersector(
-               currDocument,
-               room.Document.IsLinked,
-               findReferenceTarget: FindReferenceTarget.All,
-               targetElementIds: null,
-               elementFilter: elementFilter);
+            referenceIntersector.SetFilter(elementFilter);
 
             var bottomReference = referenceIntersector.FindNearest(pointInRoom, XYZ.BasisZ.Negate());
             if (bottomReference == null) return double.NaN;
