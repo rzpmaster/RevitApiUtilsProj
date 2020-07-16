@@ -460,7 +460,7 @@ namespace RevitUtils
 
         #region ValidateCurveLoop Spare Method
         /// <summary>
-        /// 检查是否首位相连
+        /// 检查是否首位相连，如果不首位相连，则将他以一定的规则首尾相连
         /// </summary>
         /// <param name="loop"></param>
         /// <param name="tolerance"></param>
@@ -470,7 +470,7 @@ namespace RevitUtils
         /// 1.如果他们不平行,延长他们使之相交
         /// 2.如果平行,检查距离是否大于给定tolerance:如果大于,在他们之间添加直线使之连接;如果小于,则平移后一条直线使之在前面一条直线的延长线上,在用直线相连
         /// </remarks>
-        public static CurveLoop ValidateCurveLoop(this CurveLoop loop, double tolerance = 300 * MathHelper.Mm2Feet)
+        public static CurveLoop ValidateCurveLoop(this CurveLoop loop, double tolerance = 1 * MathHelper.Mm2Feet)
         {
             List<Curve> lines = new List<Curve>();
 

@@ -221,6 +221,12 @@ namespace RevitUtils
             {
                 var loops = bottomFace.GetEdgesAsCurveLoops();
 
+                for (int i = 0; i < loops.Count; i++)
+                {
+                    if (loops[i].IsOpen())
+                        loops[i] = loops[i].ValidateCurveLoop();
+                }
+
                 return loops;
             }
 
@@ -451,7 +457,7 @@ namespace RevitUtils
         /// <param name="currDocument">当前文件</param>
         /// <returns></returns>
         /// <remarks>当房间是连接文件中的房间，但是没有传递当前文件currDocument参数时，跳过射线法计算房间高度一</remarks>
-        public static double? GetRoomCeilingHeight(this Room room, Document currDocument=null)
+        public static double? GetRoomCeilingHeight(this Room room, Document currDocument = null)
         {
             bool canUseRayMethod = true;
             if (room.Document.IsLinked && currDocument == null)
@@ -471,7 +477,7 @@ namespace RevitUtils
                 point += new XYZ(0, 0, height / 2);
                 var ceilingHeight = GetRoomCeilingHeightByRay(room, point, currDocument);
 
-                if (!double.IsNaN(ceilingHeight)) return ceilingHeight; 
+                if (!double.IsNaN(ceilingHeight)) return ceilingHeight;
             }
             return height;
         }
