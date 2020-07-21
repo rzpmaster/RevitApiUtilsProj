@@ -159,7 +159,7 @@ namespace RevitUtils
             return IsEqual(a, b, almostTolerance);
         }
 
-        public static bool IsMoreThan(this double d1, double d2)
+        public static bool IsGreaterThan(this double d1, double d2)
         {
             //要绝对大于
             if (d1 > d2 && !d1.IsEqual(d2))
@@ -169,7 +169,7 @@ namespace RevitUtils
             return false;
         }
 
-        public static bool IsMoreThanOrEqual(this double d1, double d2)
+        public static bool IsGreaterThanOrEqual(this double d1, double d2)
         {
             if (d1 > d2 || d1.IsEqual(d2))
             {
