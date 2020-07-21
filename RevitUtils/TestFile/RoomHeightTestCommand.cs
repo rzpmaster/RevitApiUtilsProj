@@ -15,7 +15,7 @@ namespace RevitUtils.TestFile
             try
             {
                 // TODO: 测试代码这里实现
-                var roomref = uidoc.Selection.PickObject(Autodesk.Revit.UI.Selection.ObjectType.LinkedElement, new LinkRoomSelectionFilter(), "请选择一个链接文件中的房间");
+                var roomref = uidoc.Selection.PickObject(Autodesk.Revit.UI.Selection.ObjectType.LinkedElement, new LinkedElementSelectionFilter<Room>(), "请选择一个链接文件中的房间");
                 Room room = LinkedElementUtils.GetLinkedDocumnet(uidoc.Document, roomref).GetElement(roomref.LinkedElementId) as Room;
 
                 var rst = RoomUtils.TryGetRoomHeight(room, out double roomHeight, uidoc.Document);
