@@ -26,7 +26,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="preserveTypeInformation">指示序列化程序是否保留给定值的原始类型</param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        string SerializeToXml<T>(T value, bool preserveTypeInformation, Encoding encoding);
+        string SerializeToXml<T>(T value, bool preserveTypeInformation=false, Encoding encoding=null);
 
         /// <summary>
         /// 
@@ -36,7 +36,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="preserveTypeInformation">指示序列化程序是否保留给定值的原始类型，默认值为false</param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation, Encoding encoding);
+        string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation=false, Encoding encoding=null);
 
         /// <summary>
         /// 
@@ -45,7 +45,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="xmlString"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        T DeserializeFromXml<T>(string xmlString, Encoding encoding);
+        T DeserializeFromXml<T>(string xmlString, Encoding encoding=null);
 
         /// <summary>
         /// 
@@ -54,6 +54,6 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="xmlString"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        object DeserializeFromXml(Type targetType, string xmlString, Encoding encoding);
+        object DeserializeFromXml(Type targetType, string xmlString, Encoding encoding=null);
     }
 }

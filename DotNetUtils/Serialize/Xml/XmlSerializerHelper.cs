@@ -37,15 +37,32 @@ namespace DotNetUtils.Serialize.Xml
         }
 
         #region IXmlSerializerHelper Members
+        /// <summary>
+        /// 默认为 Encoding.UTF8
+        /// </summary>
         public Encoding Encoding { get; set; }
 
-        public T DeserializeFromXml<T>(string xmlString, Encoding encoding)
+        /// <summary>
+        /// 反序列化对象
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="xmlString"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public T DeserializeFromXml<T>(string xmlString, Encoding encoding = null)
         {
             Type targetType = typeof(T);
             return (T)this.DeserializeFromXml(targetType, xmlString, encoding);
         }
 
-        public object DeserializeFromXml(Type targetType, string xmlString, Encoding encoding)
+        /// <summary>
+        /// 反序列化对象
+        /// </summary>
+        /// <param name="targetType"></param>
+        /// <param name="xmlString"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public object DeserializeFromXml(Type targetType, string xmlString, Encoding encoding = null)
         {
             if (targetType == null)
             {
@@ -120,7 +137,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="preserveTypeInformation"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public string SerializeToXml<T>(T value, bool preserveTypeInformation, Encoding encoding)
+        public string SerializeToXml<T>(T value, bool preserveTypeInformation = false, Encoding encoding = null)
         {
             return this.SerializeToXml(typeof(T), value, preserveTypeInformation, encoding);
         }
@@ -133,7 +150,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <param name="preserveTypeInformation">指示序列化程序是否保留给定值的原始类型</param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation, Encoding encoding)
+        public string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation = false, Encoding encoding = null)
         {
             encoding = encoding ?? this.Encoding;
 
