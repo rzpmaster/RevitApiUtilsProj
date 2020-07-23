@@ -45,8 +45,8 @@ namespace RevitUtils.DebugReated
                 tr.Start();
                 foreach (var item in solids)
                 {
-                    var directShape = CreateDirectShape(document, item);
-                    ids.Add(directShape.Id);
+                    var directShapeId = CreateDirectShape(document, item);
+                    ids.Add(directShapeId);
                 }
                 tr.Commit();
             }
