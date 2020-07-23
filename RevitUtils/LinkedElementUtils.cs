@@ -67,7 +67,7 @@ namespace RevitUtils
             foreach (RevitLinkInstance item in linkInstances)
             {
                 Document document = item.GetLinkDocument();
-                documents.Add(document);
+                if (document != null) documents.Add(document);
             }
             return documents;
         }

@@ -125,6 +125,16 @@ namespace RevitUtils
             yield break;
         }
 
+        public static bool HasValidSolid(this Element element)
+        {
+            foreach (var solid in element.GetSolids())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// 三角化Solid
         /// </summary>

@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using System;
 using System.Collections.Generic;
 
 namespace RevitUtils.TestFile
@@ -19,8 +20,9 @@ namespace RevitUtils.TestFile
                 var t2 = app.AngleTolerance;
                 var t3 = app.ShortCurveTolerance;
             }
-            catch
+            catch (Exception ex)
             {
+                TaskDialog.Show("提示", ex.ToString());
                 return Result.Cancelled;
             }
 
@@ -41,8 +43,9 @@ namespace RevitUtils.TestFile
                 ViewUtils.HighLightElements(uidoc, new List<ElementId>() { new ElementId(2170659) });
 
             }
-            catch
+            catch (Exception ex)
             {
+                TaskDialog.Show("提示", ex.ToString());
                 return Result.Cancelled;
             }
 

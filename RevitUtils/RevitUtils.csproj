@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="BoundingBoxUtils.cs" />
     <Compile Include="CurveUtils.cs" />
+    <Compile Include="DebugReated\ElementGenerator.cs" />
     <Compile Include="FaceUtils.cs" />
     <Compile Include="GeometryUtils.cs" />
     <Compile Include="LevelUtils.cs" />
@@ -55,6 +56,7 @@
     <Compile Include="InterfaceReated\RvtSelectionFilters.cs" />
     <Compile Include="TestFile\RoomHeightTestCommand.cs" />
     <Compile Include="TestFile\TestCommand.cs" />
+    <Compile Include="TestFile\TestElementGenerator.cs" />
     <Compile Include="VectorUtiles.cs" />
     <Compile Include="ViewUtils.cs" />
   </ItemGroup>

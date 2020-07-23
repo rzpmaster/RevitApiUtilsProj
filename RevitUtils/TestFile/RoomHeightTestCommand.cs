@@ -2,6 +2,7 @@
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using RevitUtils.InterfaceReated;
+using System;
 
 namespace RevitUtils.TestFile
 {
@@ -41,8 +42,9 @@ namespace RevitUtils.TestFile
 
                 return Result.Succeeded;
             }
-            catch
+            catch (Exception ex)
             {
+                TaskDialog.Show("提示", ex.ToString());
                 return Result.Cancelled;
             }
         }
