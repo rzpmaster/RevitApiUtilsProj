@@ -34,14 +34,14 @@ namespace DotNetUtils.Serialize.Xml
 
         private XmlSerializerHelper()
         {
-            this.Encoding = Encoding.UTF8;
+            this.DefaultEncoding = Encoding.UTF8;
         }
 
         #region IXmlSerializerHelper Members
         /// <summary>
         /// 默认为 Encoding.UTF8
         /// </summary>
-        public Encoding Encoding { get; set; }
+        public Encoding DefaultEncoding { get; set; }
 
         /// <summary>
         /// 反序列化对象
@@ -75,7 +75,7 @@ namespace DotNetUtils.Serialize.Xml
                 throw new ArgumentException("Must not be null or empty", nameof(xmlString));
             }
 
-            encoding = encoding ?? this.Encoding;
+            encoding = encoding ?? this.DefaultEncoding;
             byte[] buffer = encoding.GetBytes(xmlString);
 
             if (!ValueToTypeMapping.CheckIfStringContainsTypeInformation(xmlString))
@@ -158,7 +158,7 @@ namespace DotNetUtils.Serialize.Xml
             //return doc.OuterXml;
 
             // 从 XmlDocument 写入 字符串
-            encoding = encoding ?? this.Encoding;
+            encoding = encoding ?? this.DefaultEncoding;
 
             using (var stringWriter = new StringWriterWithEncoding(encoding))
             {
@@ -201,7 +201,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <returns></returns>
         public string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation = false, Encoding encoding = null)
         {
-            encoding = encoding ?? this.Encoding;
+            encoding = encoding ?? this.DefaultEncoding;
 
             if (sourceType.GetTypeInfo().IsInterface && value != null)
             {

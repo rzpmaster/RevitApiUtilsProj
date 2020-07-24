@@ -9,7 +9,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <summary>
         /// The encoding used to serialize and deserialize xml strings.
         /// </summary>
-        Encoding Encoding { get; set; }
+        Encoding DefaultEncoding { get; set; }
 
         /// <summary>
         /// Serializes XML-serializable objects to XML documents.

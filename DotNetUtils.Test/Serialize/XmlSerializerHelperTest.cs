@@ -189,7 +189,7 @@ namespace DotNetUtils.Test.Serialize
             // Assert
             Assert.That(deserializedObject, Is.Not.Null);
             Assert.That(deserializedObject.StringProperty, Does.Not.Contain("Â"), "This character is only contained if the wrong encoding is used.");
-            Assert.That(xmlSerializerHelper.Encoding, Is.EqualTo(Encoding.UTF8));
+            Assert.That(xmlSerializerHelper.DefaultEncoding, Is.EqualTo(Encoding.UTF8));
         }
 
         [Test]
@@ -197,7 +197,7 @@ namespace DotNetUtils.Test.Serialize
         {
             // Arrange
             IXmlSerializerHelper xmlSerializerHelper = XmlSerializerHelper.Instance;
-            xmlSerializerHelper.Encoding = Encoding.UTF8;
+            xmlSerializerHelper.DefaultEncoding = Encoding.UTF8;
             string serializedString = @"<?xml version=""1.0"" encoding=""iso-8859-1"" ?><SimpleSerializerClass><StringProperty>6.00% p.a. Multi Barrier Reverse Convertible on EURO STOXX 50® Index, S&amp;P 500®, Swiss Market Index®</StringProperty></SimpleSerializerClass>";
 
             // Act

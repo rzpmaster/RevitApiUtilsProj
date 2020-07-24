@@ -25,7 +25,7 @@ namespace DotNetUtils.Serialize
         public static object DeserializeFromXml(this string xmlString, Type targetType, Encoding encoding = null)
         {
             return XmlSerializerHelper.Instance.DeserializeFromXml(targetType, xmlString, encoding);
-        } 
+        }
         #endregion
     }
 }
