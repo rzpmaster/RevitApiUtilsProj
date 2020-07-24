@@ -214,8 +214,8 @@ namespace DotNetUtils.Serialize.Xml
                 objectToSerialize = new ValueToTypeMapping
                 {
                     Value = value,
-                    //TypeName = sourceType.FullName
-                    TypeName = sourceType.Name
+                    TypeName = sourceType.FullName
+                    //TypeName = sourceType.Name // 必须全名，否则找不到
                 };
             }
             else
@@ -244,45 +244,47 @@ namespace DotNetUtils.Serialize.Xml
             }
         }
         #endregion
-    }
-
-
-
-    /// <summary>
-    /// 记录 ValueToType 的映射
-    /// </summary>
-    class ValueToTypeMapping
-    {
-        /// <summary>
-        /// 表示Id，用来判断 xml 是否 是以 ValueToTypeMapping 类型序列化的
-        /// </summary>
-        public string[] Id { get => identifiers; }
 
         /// <summary>
-        /// 记录真实 类型信息
+        /// 记录 ValueToType 的映射
         /// </summary>
-        public string TypeName { get; set; }
-
-        /// <summary>
-        /// 记录 真实值
-        /// </summary>
-        public object Value { get; set; }
-
-        public static bool CheckIfStringContainsTypeInformation(string xmlString)
+        public class ValueToTypeMapping
         {
-            return identifiers.All(id => xmlString.Contains(id));
-        }
+            /// <summary>
+            /// 表示Id，用来判断 xml 是否 是以 ValueToTypeMapping 类型序列化的
+            /// </summary>
+            public string[] Id { get => identifiers; }
 
-        /// <summary>
-        /// 标识字符串，如果以 ValueToTypeMapping 类型序列化，以下字符必然会出现在 xml 中
-        /// </summary>
-        static readonly string[] identifiers = new string[]
-        {
+            /// <summary>
+            /// 记录真实 类型信息
+            /// </summary>
+            public string TypeName { get; set; }
+
+            /// <summary>
+            /// 记录 真实值
+            /// </summary>
+            public object Value { get; set; }
+
+            public static bool CheckIfStringContainsTypeInformation(string xmlString)
+            {
+                return identifiers.All(id => xmlString.Contains(id));
+            }
+
+            /// <summary>
+            /// 标识字符串，如果以 ValueToTypeMapping 类型序列化，以下字符必然会出现在 xml 中
+            /// </summary>
+            static readonly string[] identifiers = new string[]
+            {
                 "<ValueToTypeMapping>",
                 "<TypeName>",
                 "<Value"
-        };
+            };
+        }
     }
+
+
+
+    
 
     class StringWriterWithEncoding : StringWriter
     {

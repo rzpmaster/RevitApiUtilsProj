@@ -130,7 +130,7 @@ namespace DotNetUtils.Test.Serialize
             IList<string> inputList = new List<string> { "a", "b", "c" };
 
             // Act
-            // preserveTypeInformation 记录接口类型的真实类型 认真调试下本条
+            // preserveTypeInformation 记录 接口类型 的真实类型 认真调试下本条
             var serializedString = xmlSerializerHelper.SerializeToXml(inputList, preserveTypeInformation: true);
             var deserializedList = xmlSerializerHelper.DeserializeFromXml<IList<string>>(serializedString);
 
@@ -148,7 +148,7 @@ namespace DotNetUtils.Test.Serialize
             IXmlSerializerHelper xmlSerializerHelper = XmlSerializerHelper.Instance;
 
             // Act
-            // 观察 preserveTypeInformation 参数
+            // 观察 preserveTypeInformation 参数 记录非接口 的真实类型
             var serializedString = xmlSerializerHelper.SerializeToXml<int?>(null, preserveTypeInformation: true);
             var deserialized = xmlSerializerHelper.DeserializeFromXml<int?>(serializedString);
 
