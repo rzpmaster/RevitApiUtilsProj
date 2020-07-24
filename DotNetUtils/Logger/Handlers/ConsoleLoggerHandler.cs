@@ -9,7 +9,7 @@ namespace DotNetUtils.Logger.Handlers
 
         public ConsoleLoggerHandler(ILoggerFormatter loggerFormatter)
         {
-            _loggerFormatter = loggerFormatter;
+            DefaultLoggerFormatter = loggerFormatter;
         }
 
         public ILoggerFormatter DefaultLoggerFormatter { get; set; }
