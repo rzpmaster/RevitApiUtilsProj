@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DotNetUtils.Test.Serialize
+namespace DotNetUtils.Test.Serialize.TestData
 {
     public class SimpleSerializerClass
     {

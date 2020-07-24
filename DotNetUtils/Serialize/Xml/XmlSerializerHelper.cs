@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -78,7 +79,7 @@ namespace DotNetUtils.Serialize.Xml
             byte[] buffer = encoding.GetBytes(xmlString);
 
             if (!ValueToTypeMapping.CheckIfStringContainsTypeInformation(xmlString))
-            {//如果没有标识类型信息，说明没有用ValueToTypeMapping序列化，直接反序列化即可
+            {
                 var serializer = new XmlSerializer(targetType);
                 using (var memoryStream = new MemoryStream(buffer))
                 {
@@ -87,26 +88,42 @@ namespace DotNetUtils.Serialize.Xml
                 }
             }
 
+            bool isTargetTypeAnInterface = targetType.GetTypeInfo().IsInterface;
+            Type[] extraTypes = { };
+            if (!isTargetTypeAnInterface)
+            {
+                extraTypes = new[] { targetType };
+            }
+
+            var serializerBefore = new XmlSerializer(typeof(ValueToTypeMapping), extraTypes);
             ValueToTypeMapping deserializedObject = null;
-            // 第一次尝试序列化,只能看到他的类型信息
-            var serializerBefore = new XmlSerializer(typeof(ValueToTypeMapping));
+
             using (var memoryStream = new MemoryStream(buffer))
             {
                 deserializedObject = (ValueToTypeMapping)serializerBefore.Deserialize(memoryStream);
             }
-            Type serializedType = Type.GetType(deserializedObject.TypeName);
-            // 得到类型信息后，第二次彻底序列化
-            var serializerAfter = new XmlSerializer(typeof(ValueToTypeMapping), new[] { serializedType });
-            using (var memoryStream = new MemoryStream(buffer))
+
+            // If the target type is an interface, we need to deserialize again with more type information
+            if (isTargetTypeAnInterface)
             {
-                deserializedObject = (ValueToTypeMapping)serializerAfter.Deserialize(memoryStream);
+                // 依靠 ValueToTypeMapping 中的 TypeName 判断真实类型 
+                Type serializedType = Type.GetType(deserializedObject.TypeName);
+
+                // 重新反序列化
+                var serializerAfter = new XmlSerializer(typeof(ValueToTypeMapping), new[] { serializedType });
+                using (var memoryStream = new MemoryStream(buffer))
+                {
+                    deserializedObject = (ValueToTypeMapping)serializerAfter.Deserialize(memoryStream);
+                }
+
+                return Convert.ChangeType(deserializedObject.Value, serializedType);
             }
 
-            return Convert.ChangeType(deserializedObject.Value, serializedType);
+            return deserializedObject.Value;
         }
 
         /// <summary>
-        /// 将 object 序列化为 xmlWriter
+        /// 序列化为 xmlWriter
         /// </summary>
         /// <param name="xmlWriter"></param>
         /// <param name="value"></param>
@@ -119,6 +136,46 @@ namespace DotNetUtils.Serialize.Xml
 
             var serializer = new XmlSerializer(value.GetType());
             serializer.Serialize(xmlWriter, value);
+        }
+
+        /// <summary>
+        /// 序列化为  XmlDocument
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public string SerializeToXmlDocument(object value, Encoding encoding = null)
+        {
+            var doc = new XmlDocument();
+            var nav = doc.CreateNavigator();
+
+            // 写入 XmlDocument
+            using (var xmlWriter = nav.AppendChild())
+            {
+                this.SerializeToXml(xmlWriter, value);
+            }
+
+            //return doc.OuterXml;
+
+            // 从 XmlDocument 写入 字符串
+            encoding = encoding ?? this.Encoding;
+
+            using (var stringWriter = new StringWriterWithEncoding(encoding))
+            {
+                var xmlWriterSettings = new XmlWriterSettings
+                {
+                    Indent = true,
+                    IndentChars = "\t",
+                    Encoding = encoding
+                };
+
+                using (var xmlTextWriter = XmlWriter.Create(stringWriter, xmlWriterSettings))
+                {
+                    doc.WriteTo(xmlTextWriter);
+                    xmlTextWriter.Flush();
+                    return stringWriter.GetStringBuilder().ToString();
+                }
+            }
         }
 
         /// <summary>
@@ -137,7 +194,7 @@ namespace DotNetUtils.Serialize.Xml
         /// <summary>
         /// 序列化
         /// </summary>
-        /// <param name="sourceType">要序列化的类型</param>
+        /// <param name="sourceType"></param>
         /// <param name="value"></param>
         /// <param name="preserveTypeInformation">指示序列化程序是否保留给定值的原始类型（只为接口服务）</param>
         /// <param name="encoding"></param>
@@ -146,28 +203,19 @@ namespace DotNetUtils.Serialize.Xml
         {
             encoding = encoding ?? this.Encoding;
 
-            if (!sourceType.GetTypeInfo().IsInterface && value != null && sourceType != value.GetType())
-            {//如果不是接口的原因，源类型和 value 类型不一样，后面绝对写不了，强制不让记录原始类型
-                preserveTypeInformation = false;
-            }
-
-            if (value == null)
-            {//如果值为null，记录类型没有意义，也强制不让记录
-                preserveTypeInformation = false;
-            }
-
             if (sourceType.GetTypeInfo().IsInterface && value != null)
-            {//如果是接口类型，需要更新 接口的实际类型
+            {
                 sourceType = value.GetType();
             }
 
             object objectToSerialize;
             if (preserveTypeInformation)
-            {//如果需要保留原始信息，则需要记录一下值和类型的映射，最后序列化这个映射对象
+            {
                 objectToSerialize = new ValueToTypeMapping
                 {
                     Value = value,
-                    TypeName = value.GetType().FullName
+                    //TypeName = sourceType.FullName
+                    TypeName = sourceType.Name
                 };
             }
             else
@@ -175,23 +223,20 @@ namespace DotNetUtils.Serialize.Xml
                 objectToSerialize = value;
             }
 
-            // 注意 如果 preserveTypeInformation 参数为 true 
-            // mianType 为   ValueToTypeMapping
-            // extraTypes 为 真实类型 sourceType（只有当他是接口的时候才会取更新它，否则就是传进来的值，如果传进来的值是父类，而且他又要记录原始的类型，下面后无法序列化会报错，所以上面才会强制修改 preserveTypeInformation 参数）
             var mainType = objectToSerialize?.GetType() ?? sourceType;
             var extraTypes = new[] { sourceType };
-
-            // 初始化带有类型信息的序列化器，会将类型信息系列化到 xml 字符串中
             var serializer = new XmlSerializer(mainType, extraTypes);
+            // 去掉 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" 属性
+            XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces(
+                new XmlQualifiedName[] {
+                        XmlQualifiedName.Empty
+             });
 
             using (var memoryStream = new MemoryStream())
             {
                 using (var streamWriter = new StreamWriter(memoryStream, encoding))
                 {
-                    serializer.Serialize(streamWriter, objectToSerialize);
-                    // 当 mainType 无法单独完成序列化（为 ValueToTypeMapping 类型时）
-                    // 并且 objectToSerialize 类型和 extraTypes 数组不一样，或者 extraTypes 是父类时，会报错，无法序列化
-
+                    serializer.Serialize(streamWriter, objectToSerialize, namespaces);
                     byte[] buffer = (streamWriter.BaseStream as MemoryStream).ToArray();
                     string xml = encoding.GetString(buffer, 0, buffer.Length);
                     return xml;
@@ -199,27 +244,61 @@ namespace DotNetUtils.Serialize.Xml
             }
         }
         #endregion
+    }
+
+
+
+    /// <summary>
+    /// 记录 ValueToType 的映射
+    /// </summary>
+    class ValueToTypeMapping
+    {
+        /// <summary>
+        /// 表示Id，用来判断 xml 是否 是以 ValueToTypeMapping 类型序列化的
+        /// </summary>
+        public string[] Id { get => identifiers; }
 
         /// <summary>
-        /// 记录 ValueToType 的映射
+        /// 记录真实 类型信息
         /// </summary>
-        public class ValueToTypeMapping
+        public string TypeName { get; set; }
+
+        /// <summary>
+        /// 记录 真实值
+        /// </summary>
+        public object Value { get; set; }
+
+        public static bool CheckIfStringContainsTypeInformation(string xmlString)
         {
-            public string Id { get => identifier; }
+            return identifiers.All(id => xmlString.Contains(id));
+        }
 
-            public string TypeName { get; set; }
+        /// <summary>
+        /// 标识字符串，如果以 ValueToTypeMapping 类型序列化，以下字符必然会出现在 xml 中
+        /// </summary>
+        static readonly string[] identifiers = new string[]
+        {
+                "<ValueToTypeMapping>",
+                "<TypeName>",
+                "<Value"
+        };
+    }
 
-            public object Value { get; set; }
+    class StringWriterWithEncoding : StringWriter
+    {
+        private readonly Encoding encoding;
 
-            public static bool CheckIfStringContainsTypeInformation(string xmlString)
+        public StringWriterWithEncoding(Encoding encoding)
+        {
+            this.encoding = encoding;
+        }
+
+        public override Encoding Encoding
+        {
+            get
             {
-                return xmlString.Contains(identifier);
+                return this.encoding;
             }
-
-            /// <summary>
-            /// 标识字符串，如果以 ValueToTypeMapping 类型序列化，以下字符必然会出现在 xml 中
-            /// </summary>
-            static readonly string identifier = "<ValueToTypeMapping xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">";
         }
     }
 }

@@ -40,12 +40,17 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialize\ObjectExtensionsTest.cs" />
-    <Compile Include="Serialize\SimpleSerializerClass.cs" />
+    <Compile Include="Serialize\TestData\Restaurant.cs" />
+    <Compile Include="Serialize\TestData\SimpleSerializerClass.cs" />
+    <Compile Include="Serialize\TestData\Students.cs" />
+    <Compile Include="Serialize\TestData\XmlTestData.cs" />
     <Compile Include="Serialize\XmlSerializerHelperTest.cs" />
+    <Compile Include="Serialize\XsdValidatorTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit">
@@ -57,6 +62,11 @@
       <Project>{09D200E6-6D5A-416F-ABB1-A369E2FCE317}</Project>
       <Name>DotNetUtils</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Serialize\TestData\SerializedData.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

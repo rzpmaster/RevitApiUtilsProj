@@ -19,6 +19,14 @@ namespace DotNetUtils.Serialize.Xml
         void SerializeToXml(XmlWriter xmlWriter, object value);
 
         /// <summary>
+        /// Serializes XML-serializable objects to XML documents.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        string SerializeToXmlDocument(object value, Encoding encoding = null);
+
+        /// <summary>
         /// 序列化
         /// </summary>
         /// <typeparam name="T">要序列化的类型</typeparam>
