@@ -10,7 +10,7 @@ namespace DotNetUtils.Logger.Formatters
     {
         public string ApplyFormat(LogMessage logMessage)
         {
-            return string.Format("{0:dd.MM.yyyy HH:mm:ss}: {1} [line: {2} {3} -> {4}()]:\n {5}\n\n",
+            return string.Format("{0:yyyy.MM.dd HH:mm:ss}: {1} [line: {2} {3} -> {4}()]:\n {5}\n\n",
                             logMessage.DateTime,
                             logMessage.Level, logMessage.LineNumber, logMessage.CallingClass, logMessage.CallingMethod,
                             logMessage.Text);

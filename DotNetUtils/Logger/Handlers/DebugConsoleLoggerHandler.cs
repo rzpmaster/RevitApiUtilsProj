@@ -13,6 +13,8 @@ namespace DotNetUtils.Logger.Handlers
 
         public ILoggerFormatter DefaultLoggerFormatter { get; set; }
 
+        public string Name => "调试窗口日志工具";
+
         public void Publish(LogMessage logMessage)
         {
             System.Diagnostics.Debug.WriteLine(DefaultLoggerFormatter.ApplyFormat(logMessage));

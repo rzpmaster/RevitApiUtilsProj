@@ -14,6 +14,8 @@ namespace DotNetUtils.Logger.Handlers
 
         public ILoggerFormatter DefaultLoggerFormatter { get; set; }
 
+        public string Name => "控制台日志工具";
+
         public void Publish(LogMessage logMessage)
         {
             Console.WriteLine(DefaultLoggerFormatter.ApplyFormat(logMessage));

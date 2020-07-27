@@ -1,11 +1,8 @@
 ﻿using DotNetUtils.Logger.Formatters;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DotNetUtils.Logger.Handlers
 {
@@ -13,7 +10,7 @@ namespace DotNetUtils.Logger.Handlers
     {
         object lockObj = new object();
 
-        long fileSize = 0x600000L;
+        long maxFileSize = 0x600000L;
         string _filePath;
 
         public FileLoggerHandler() : this(new DefaultLoggerFormatter()) { }
@@ -44,17 +41,16 @@ namespace DotNetUtils.Logger.Handlers
             DefaultLoggerFormatter = loggerFormatter;
         }
 
-        #region ILoggerHandler Members
         public ILoggerFormatter DefaultLoggerFormatter { get; set; }
+
+        #region ILoggerHandler Members
+        public string Name => $"文件日志工具(路径:{_filePath})";
 
         public void Publish(LogMessage logMessage)
         {
-            lock (lockObj)
-            {
-                // 检查文件夹是否存在
-                // 大于 fileSize 需要跟新文件名
-                DoesFilePathExistOrTooLarge();
-            }
+            // 检查文件夹是否存在
+            // 大于 fileSize 需要跟新文件名
+            DoesFilePathExistOrTooLarge();
 
             // 异步写入文件 
             WriterAsyn(logMessage);
@@ -81,14 +77,36 @@ namespace DotNetUtils.Logger.Handlers
 
         void DoesFilePathExistOrTooLarge()
         {
-            var directory = Path.GetDirectoryName(_filePath);
+            lock (lockObj)
+            {
+                var directory = Path.GetDirectoryName(_filePath);
 
-            if (Directory.Exists(directory))
-            {
-            }
-            else
-            {
-                Directory.CreateDirectory(directory);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                // 如果当前log文件超过了最大字节大小，分开记录
+                if (File.Exists(_filePath) &&
+                    new FileInfo(_filePath).Length > this.maxFileSize)
+                {
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(_filePath);
+                    string extension = Path.GetExtension(_filePath);
+                    int num = 0;
+                    while (true)
+                    {
+                        string str5 = Path.Combine(directory, string.Concat(new object[] { fileNameWithoutExtension, "_", num, extension }));
+                        if (!File.Exists(str5))
+                        {
+                            _filePath = str5;
+                            break;
+                        }
+                        if (new FileInfo(str5).Length < this.maxFileSize)
+                        {
+                            _filePath = str5;
+                            break;
+                        }
+                        num++;
+                    }
+                }
             }
         }
 

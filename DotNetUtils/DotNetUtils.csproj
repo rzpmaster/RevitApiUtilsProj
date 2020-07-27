@@ -41,14 +41,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logger\AppLogger.cs" />
     <Compile Include="Logger\Formatters\DefaultLoggerFormatter.cs" />
     <Compile Include="Logger\Formatters\ILoggerFormatter.cs" />
     <Compile Include="Logger\Handlers\ConsoleLoggerHandler.cs" />
     <Compile Include="Logger\Handlers\DebugConsoleLoggerHandler.cs" />
     <Compile Include="Logger\Handlers\FileLoggerHandler.cs" />
+    <Compile Include="Logger\Handlers\FilteredLoggerHandler.cs" />
     <Compile Include="Logger\Handlers\ILoggerHandler.cs" />
+    <Compile Include="Logger\ILogger.cs" />
     <Compile Include="Logger\Logger.cs" />
     <Compile Include="Logger\LogMessage.cs" />
+    <Compile Include="Logger\Publisher\ILoggerHandlerManager.cs" />
+    <Compile Include="Logger\Publisher\LoggerHandlerManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialize\Json\IJsonSerializerHelper.cs" />
     <Compile Include="Serialize\Json\JsonSerializerHelper.cs" />

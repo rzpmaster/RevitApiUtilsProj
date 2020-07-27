@@ -1,16 +1,11 @@
-﻿using DotNetUtils.Logger.Formatters;
-
-namespace DotNetUtils.Logger.Handlers
+﻿namespace DotNetUtils.Logger.Handlers
 {
     public interface ILoggerHandler
     {
-        /// <summary>
-        /// LogMessage 写入日志的格式
-        /// </summary>
-        ILoggerFormatter DefaultLoggerFormatter { get; set; }
+        string Name { get; }
 
         /// <summary>
-        /// 写入日志
+        /// 发布日志
         /// </summary>
         /// <param name="logMessage"></param>
         void Publish(LogMessage logMessage);

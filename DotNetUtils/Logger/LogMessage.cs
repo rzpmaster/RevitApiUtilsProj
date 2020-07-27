@@ -11,7 +11,7 @@ namespace DotNetUtils.Logger
     {
         public LogMessage() { }
 
-        public LogMessage(Logger.LogLevel level, string text, DateTime dateTime, string callingClass, string callingMethod, int lineNumber)
+        public LogMessage(LogLevel level, string text, DateTime dateTime, string callingClass, string callingMethod, int lineNumber)
         {
             Level = level;
             Text = text;
@@ -22,7 +22,7 @@ namespace DotNetUtils.Logger
         }
 
         public DateTime DateTime { get; set; }
-        public Logger.LogLevel Level { get; set; }
+        public LogLevel Level { get; set; }
         public string Text { get; set; }
         public string CallingClass { get; set; }
         public string CallingMethod { get; set; }
