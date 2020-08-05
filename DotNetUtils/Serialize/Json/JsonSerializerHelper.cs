@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,26 +38,52 @@ namespace DotNetUtils.Serialize.Json
         }
 
         #region IJsonSerializerHelper Members
+        /// <summary>
+        /// 默认为 Encoding.UTF8
+        /// </summary>
         public Encoding DefaultEncoding { get; set; }
 
         public object DeserializeFromJson(Type targetType, string jsonString, Encoding encoding = null)
         {
-            throw new NotImplementedException();
+            var serializer = new JsonSerializer();
+
+            encoding = encoding ?? this.DefaultEncoding;
+            byte[] buffer = encoding.GetBytes(jsonString);
+
+            using (var memoryStream = new MemoryStream(buffer))
+            using (var streamReader = new StreamReader(memoryStream))
+            using (var reader = new JsonTextReader(streamReader))
+            {
+                var deserialized = serializer.Deserialize(reader, targetType);
+                return deserialized;
+            }
         }
 
         public T DeserializeFromJson<T>(string jsonString, Encoding encoding = null)
         {
-            throw new NotImplementedException();
+            Type targetType = typeof(T);
+            return (T)this.DeserializeFromJson(targetType, jsonString, encoding);
         }
 
         public string SerializeToJson(Type sourceType, object value, Encoding encoding = null)
         {
-            throw new NotImplementedException();
+            encoding = encoding ?? this.DefaultEncoding;
+            var serializer = new JsonSerializer();
+
+            using (var memoryStream = new MemoryStream())
+            using (var streamWriter = new StreamWriter(memoryStream, encoding))
+            using (var writer = new JsonTextWriter(streamWriter))
+            {
+                serializer.Serialize(streamWriter, value);
+                byte[] buffer = (streamWriter.BaseStream as MemoryStream).ToArray();
+                string json = encoding.GetString(buffer, 0, buffer.Length);
+                return json;
+            }
         }
 
         public string SerializeToJson<T>(T value, Encoding encoding = null)
         {
-            throw new NotImplementedException();
+            return this.SerializeToJson(typeof(T), value, encoding);
         }
         #endregion
     }

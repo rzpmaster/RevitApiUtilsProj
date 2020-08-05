@@ -59,10 +59,10 @@
     <Compile Include="Serialize\Json\JsonSerializerHelper.cs" />
     <Compile Include="Serialize\SerializeExtension.cs" />
     <Compile Include="Serialize\Xml\IXmlSerializerHelper.cs" />
-    <Compile Include="Serialize\Xml\IXsdValidator.cs" />
+    <Compile Include="Serialize\Xml\XsdValidate\IXsdValidator.cs" />
     <Compile Include="Serialize\Xml\XmlSerializerHelper.cs" />
-    <Compile Include="Serialize\Xml\XsdValidationException.cs" />
-    <Compile Include="Serialize\Xml\XsdValidator.cs" />
+    <Compile Include="Serialize\Xml\XsdValidate\XsdValidationException.cs" />
+    <Compile Include="Serialize\Xml\XsdValidate\XsdValidator.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

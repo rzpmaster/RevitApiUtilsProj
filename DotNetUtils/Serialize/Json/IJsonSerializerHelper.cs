@@ -8,6 +8,9 @@ namespace DotNetUtils.Serialize.Json
 {
     public interface IJsonSerializerHelper
     {
+        /// <summary>
+        /// The encoding used to serialize and deserialize json strings.
+        /// </summary>
         Encoding DefaultEncoding { get; set; }
 
         string SerializeToJson(Type sourceType, object value, Encoding encoding = null);

@@ -43,26 +43,6 @@ namespace DotNetUtils.Serialize.Xml
         /// </summary>
         public Encoding DefaultEncoding { get; set; }
 
-        /// <summary>
-        /// 反序列化对象
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="xmlString"></param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        public T DeserializeFromXml<T>(string xmlString, Encoding encoding = null)
-        {
-            Type targetType = typeof(T);
-            return (T)this.DeserializeFromXml(targetType, xmlString, encoding);
-        }
-
-        /// <summary>
-        /// 反序列化对象
-        /// </summary>
-        /// <param name="targetType"></param>
-        /// <param name="xmlString"></param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
         public object DeserializeFromXml(Type targetType, string xmlString, Encoding encoding = null)
         {
             if (targetType == null)
@@ -122,6 +102,63 @@ namespace DotNetUtils.Serialize.Xml
             return deserializedObject.Value;
         }
 
+        public T DeserializeFromXml<T>(string xmlString, Encoding encoding = null)
+        {
+            Type targetType = typeof(T);
+            return (T)this.DeserializeFromXml(targetType, xmlString, encoding);
+        }
+
+        public string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation = false, Encoding encoding = null)
+        {
+            encoding = encoding ?? this.DefaultEncoding;
+
+            if (sourceType.GetTypeInfo().IsInterface && value != null)
+            {
+                sourceType = value.GetType();
+            }
+
+            object objectToSerialize;
+            if (preserveTypeInformation)
+            {
+                objectToSerialize = new ValueToTypeMapping
+                {
+                    Value = value,
+                    TypeName = sourceType.FullName
+                    //TypeName = sourceType.Name // 必须全名，否则找不到
+                };
+            }
+            else
+            {
+                objectToSerialize = value;
+            }
+
+            var mainType = objectToSerialize?.GetType() ?? sourceType;
+            var extraTypes = new[] { sourceType };
+            var serializer = new XmlSerializer(mainType, extraTypes);
+            // 去掉 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" 属性
+            XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces(
+                new XmlQualifiedName[] {
+                        XmlQualifiedName.Empty
+             });
+
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var streamWriter = new StreamWriter(memoryStream, encoding))
+                {
+                    serializer.Serialize(streamWriter, objectToSerialize, namespaces);
+                    byte[] buffer = (streamWriter.BaseStream as MemoryStream).ToArray();
+                    string xml = encoding.GetString(buffer, 0, buffer.Length);
+                    return xml;
+                }
+            }
+        }
+
+        public string SerializeToXml<T>(T value, bool preserveTypeInformation = false, Encoding encoding = null)
+        {
+            return this.SerializeToXml(typeof(T), value, preserveTypeInformation, encoding);
+        }
+        #endregion
+
         /// <summary>
         /// 序列化为 xmlWriter
         /// </summary>
@@ -179,73 +216,6 @@ namespace DotNetUtils.Serialize.Xml
         }
 
         /// <summary>
-        /// 将对象序列化为 xml 字符串
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="preserveTypeInformation"></param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        public string SerializeToXml<T>(T value, bool preserveTypeInformation = false, Encoding encoding = null)
-        {
-            return this.SerializeToXml(typeof(T), value, preserveTypeInformation, encoding);
-        }
-
-        /// <summary>
-        /// 序列化
-        /// </summary>
-        /// <param name="sourceType"></param>
-        /// <param name="value"></param>
-        /// <param name="preserveTypeInformation">指示序列化程序是否保留给定值的原始类型（只为接口服务）</param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        public string SerializeToXml(Type sourceType, object value, bool preserveTypeInformation = false, Encoding encoding = null)
-        {
-            encoding = encoding ?? this.DefaultEncoding;
-
-            if (sourceType.GetTypeInfo().IsInterface && value != null)
-            {
-                sourceType = value.GetType();
-            }
-
-            object objectToSerialize;
-            if (preserveTypeInformation)
-            {
-                objectToSerialize = new ValueToTypeMapping
-                {
-                    Value = value,
-                    TypeName = sourceType.FullName
-                    //TypeName = sourceType.Name // 必须全名，否则找不到
-                };
-            }
-            else
-            {
-                objectToSerialize = value;
-            }
-
-            var mainType = objectToSerialize?.GetType() ?? sourceType;
-            var extraTypes = new[] { sourceType };
-            var serializer = new XmlSerializer(mainType, extraTypes);
-            // 去掉 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" 属性
-            XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces(
-                new XmlQualifiedName[] {
-                        XmlQualifiedName.Empty
-             });
-
-            using (var memoryStream = new MemoryStream())
-            {
-                using (var streamWriter = new StreamWriter(memoryStream, encoding))
-                {
-                    serializer.Serialize(streamWriter, objectToSerialize, namespaces);
-                    byte[] buffer = (streamWriter.BaseStream as MemoryStream).ToArray();
-                    string xml = encoding.GetString(buffer, 0, buffer.Length);
-                    return xml;
-                }
-            }
-        }
-        #endregion
-
-        /// <summary>
         /// 记录 ValueToType 的映射
         /// </summary>
         public class ValueToTypeMapping
@@ -281,10 +251,6 @@ namespace DotNetUtils.Serialize.Xml
             };
         }
     }
-
-
-
-    
 
     class StringWriterWithEncoding : StringWriter
     {
