@@ -64,7 +64,9 @@
     <Compile Include="Serialize\Xml\XsdValidate\XsdValidationException.cs" />
     <Compile Include="Serialize\Xml\XsdValidate\XsdValidator.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Serialize\Json\JsonValidate\" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.3</Version>

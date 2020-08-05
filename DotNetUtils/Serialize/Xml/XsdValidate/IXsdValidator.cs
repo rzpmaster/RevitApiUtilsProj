@@ -1,4 +1,4 @@
-﻿namespace DotNetUtils.Serialize.Xml
+﻿namespace DotNetUtils.Serialize.Xml.XsdValidate
 {
     public interface IXsdValidator
     {

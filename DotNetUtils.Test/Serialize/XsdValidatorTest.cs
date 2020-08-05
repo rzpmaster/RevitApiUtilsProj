@@ -1,12 +1,6 @@
-﻿using DotNetUtils.Serialize.Xml;
+﻿using DotNetUtils.Serialize.Xml.XsdValidate;
 using DotNetUtils.Test.Serialize.TestData;
 using NUnit.Framework;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DotNetUtils.Test.Serialize
 {

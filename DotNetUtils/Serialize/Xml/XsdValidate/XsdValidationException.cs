@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DotNetUtils.Serialize.Xml
+namespace DotNetUtils.Serialize.Xml.XsdValidate
 {
     public class XsdValidationException : Exception
     {

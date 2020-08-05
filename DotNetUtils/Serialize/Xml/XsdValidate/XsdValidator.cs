@@ -5,7 +5,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Schema;
 
-namespace DotNetUtils.Serialize.Xml
+namespace DotNetUtils.Serialize.Xml.XsdValidate
 {
     public class XsdValidator : IXsdValidator
     {
